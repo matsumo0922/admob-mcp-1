@@ -44,7 +44,19 @@ echo
 echo "Building..."
 npm run build --prefix "$SCRIPT_DIR"
 
-# 5. Register MCP server with Claude Code
+# 5. Authorize with Google
+if [ -f "$SECRETS_DIR/token.json" ]; then
+  echo
+  echo "✓ Already authorized (secrets/token.json exists)"
+else
+  echo
+  echo "Authorizing with Google AdMob API..."
+  echo "A browser window will open for you to grant access."
+  echo
+  ADMOB_CREDENTIALS_PATH="$SECRETS_DIR/client_secret.json" node "$SCRIPT_DIR/dist/authorize.js"
+fi
+
+# 6. Register MCP server with Claude Code
 echo
 echo "Registering MCP server with Claude Code..."
 claude mcp add admob \
@@ -55,5 +67,4 @@ claude mcp add admob \
 echo
 echo "=== Setup complete ==="
 echo
-echo "The 'admob' MCP server has been added to Claude Code."
-echo "On first use, a browser window will open for Google OAuth authorization."
+echo "The 'admob' MCP server has been added to Claude Code and is ready to use."

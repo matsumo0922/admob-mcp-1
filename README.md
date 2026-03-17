@@ -30,11 +30,10 @@ cd admob-mcp
 The setup script will:
 - Find and rename the Google OAuth JSON to `secrets/client_secret.json`
 - Install dependencies and build
+- Open a browser for Google OAuth authorization (token saved to `secrets/token.json`)
 - Register the MCP server with Claude Code
 
-### 3. Authorize
-
-On first use, the server will print an OAuth URL to the console. Open it in your browser, authorize, and the token will be saved to `secrets/token.json` for future use.
+> **Note:** If your Google Cloud project's OAuth consent screen has not been published (i.e. it is still in "Testing" status), you will see an authorization error. To fix this, either publish the app or add your Google account as a test user under **OAuth consent screen** > **Audience** in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials/consent).
 
 ## Manual configuration
 
