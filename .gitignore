@@ -1,4 +1,5 @@
 node_modules/
 dist/
-secrets/
+secrets/*
+!secrets/.gitkeep
 *.tsbuildinfo
