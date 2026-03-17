@@ -54,6 +54,10 @@ If you prefer not to use `setup.sh`, add this to your Claude Code MCP config:
 }
 ```
 
+## Usage
+
+Just ask Claude a question about your AdMob data in natural language. On first use, Claude will automatically call `list_accounts` to discover your AdMob accounts and ask which one you want to work with. After that, it will use the appropriate tools to answer your questions.
+
 ## Tools
 
 ### Core API tools
