@@ -27,7 +27,7 @@ npm run start      # run server on stdio
 
 **Reporting** (10): `revenue_trend`, `ad_unit_performance`, `country_breakdown`, `format_comparison`, `platform_comparison`, `fill_rate_analysis`, `mediation_ad_source_performance`, `wow_revenue`, `top_apps`, `ecpm_trend`
 
-**Revenue Optimization** (13): `revenue_drop_diagnosis`, `serving_restriction_impact`, `app_version_impact`, `sdk_version_check`, `month_over_month`, `high_impression_low_ctr`, `os_version_performance`, `mediation_group_analysis`, `country_ecpm_opportunity`, `format_by_country`, `revenue_pacing`, `best_worst_days`, `weekday_vs_weekend`
+**Revenue Optimization** (14): `revenue_drop_diagnosis`, `serving_restriction_impact`, `app_version_impact`, `sdk_version_check`, `month_over_month`, `high_impression_low_ctr`, `os_version_performance`, `mediation_group_analysis`, `country_ecpm_opportunity`, `format_by_country`, `revenue_pacing`, `best_worst_days`, `weekday_vs_weekend`, `platform_format_matrix`
 
 ## Key Patterns
 

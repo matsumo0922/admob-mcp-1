@@ -1074,6 +1074,29 @@ server.tool(
   }
 );
 
+server.tool(
+  "platform_format_matrix",
+  "Cross-reference platform and ad format to see which formats perform best on each platform. Use for: 'Which formats perform best on each platform?', 'Compare rewarded ads on iOS vs Android'",
+  {
+    account_id: z.string().describe("AdMob account ID"),
+    days: z.number().optional().describe("Lookback period in days (default 7)"),
+  },
+  async ({ account_id, days }) => {
+    const n = days || 7;
+    const client = await getClient();
+    const result = await client.generateNetworkReport(account_id, {
+      dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+      dimensions: ["PLATFORM", "FORMAT"],
+      metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "IMPRESSION_RPM", "IMPRESSION_CTR", "SHOW_RATE"],
+      sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
+    } as any);
+    const rows = parseReportRows(result);
+    return {
+      content: [{ type: "text", text: formatReportTable(rows, { title: `Platform x Format Matrix (last ${n} days)` }) }],
+    };
+  }
+);
+
 // --- Start Server ---
 
 async function main() {
