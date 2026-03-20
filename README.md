@@ -107,6 +107,7 @@ Just ask Claude a question about your AdMob data in natural language. On first u
 | `revenue_concentration` | "How diversified is my revenue?" |
 | `ad_source_trend` | "How are my mediation sources trending?" |
 | `app_deep_dive` | "Give me a full breakdown for my top app" |
+| `anomaly_detection` | "Flag any unusual days in the last 30 days" |
 
 ## Project structure
 

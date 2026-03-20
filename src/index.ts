@@ -1249,6 +1249,70 @@ server.tool(
   }
 );
 
+server.tool(
+  "anomaly_detection",
+  "Flag days with unusual revenue or impression changes vs rolling average. Use for: 'Flag any unusual days in the last 30 days', 'Were there any anomalies in my revenue?'",
+  {
+    account_id: z.string().describe("AdMob account ID"),
+    days: z.number().optional().describe("Lookback period in days (default 30)"),
+    threshold: z.number().optional().describe("% deviation from rolling average to flag (default 30)"),
+  },
+  async ({ account_id, days, threshold }) => {
+    const n = days || 30;
+    const thresh = threshold || 30;
+    const client = await getClient();
+    const result = await client.generateNetworkReport(account_id, {
+      dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+      dimensions: ["DATE"],
+      metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS"],
+      sortConditions: [{ dimension: "DATE", order: "ASCENDING" }],
+    } as any);
+    const rows = parseReportRows(result);
+
+    const windowSize = 7;
+    const anomalies: Array<Record<string, string>> = [];
+
+    for (let i = windowSize; i < rows.length; i++) {
+      // Calculate rolling average of previous `windowSize` days
+      let avgEarnings = 0;
+      let avgImpressions = 0;
+      for (let j = i - windowSize; j < i; j++) {
+        avgEarnings += parseInt(rows[j].ESTIMATED_EARNINGS || "0", 10);
+        avgImpressions += parseInt(rows[j].IMPRESSIONS || "0", 10);
+      }
+      avgEarnings /= windowSize;
+      avgImpressions /= windowSize;
+
+      const earnings = parseInt(rows[i].ESTIMATED_EARNINGS || "0", 10);
+      const impressions = parseInt(rows[i].IMPRESSIONS || "0", 10);
+
+      const earningsDeviation = avgEarnings > 0 ? ((earnings - avgEarnings) / avgEarnings) * 100 : 0;
+      const impressionsDeviation = avgImpressions > 0 ? ((impressions - avgImpressions) / avgImpressions) * 100 : 0;
+
+      if (Math.abs(earningsDeviation) >= thresh || Math.abs(impressionsDeviation) >= thresh) {
+        anomalies.push({
+          DATE: rows[i].DATE,
+          ESTIMATED_EARNINGS: rows[i].ESTIMATED_EARNINGS,
+          EARNINGS_VS_AVG: `${earningsDeviation >= 0 ? "+" : ""}${earningsDeviation.toFixed(1)}%`,
+          IMPRESSIONS: rows[i].IMPRESSIONS,
+          IMPRESSIONS_VS_AVG: `${impressionsDeviation >= 0 ? "+" : ""}${impressionsDeviation.toFixed(1)}%`,
+          TYPE: earningsDeviation < -thresh ? "DROP" : earningsDeviation > thresh ? "SPIKE" : impressionsDeviation < -thresh ? "IMP_DROP" : "IMP_SPIKE",
+        });
+      }
+    }
+
+    if (anomalies.length === 0) {
+      return {
+        content: [{ type: "text", text: `Anomaly Detection (last ${n} days, threshold: ${thresh}%)\n\nNo anomalies detected. All days were within ${thresh}% of the 7-day rolling average.` }],
+      };
+    }
+
+    return {
+      content: [{ type: "text", text: formatReportTable(anomalies, { title: `Anomalies Detected (last ${n} days, threshold: ${thresh}% deviation from 7-day rolling avg)` }) }],
+    };
+  }
+);
+
 // --- Start Server ---
 
 async function main() {
