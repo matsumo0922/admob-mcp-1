@@ -1097,6 +1097,78 @@ server.tool(
   }
 );
 
+server.tool(
+  "revenue_concentration",
+  "Pareto analysis of revenue concentration across apps, countries, and ad units. Use for: 'How diversified is my revenue?', 'Am I too dependent on one country or app?'",
+  {
+    account_id: z.string().describe("AdMob account ID"),
+    days: z.number().optional().describe("Lookback period in days (default 7)"),
+  },
+  async ({ account_id, days }) => {
+    const n = days || 7;
+    const client = await getClient();
+
+    const [byApp, byCountry, byAdUnit] = await Promise.all([
+      client.generateNetworkReport(account_id, {
+        dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+        dimensions: ["APP"],
+        metrics: ["ESTIMATED_EARNINGS"],
+        sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
+      } as any),
+      client.generateNetworkReport(account_id, {
+        dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+        dimensions: ["COUNTRY"],
+        metrics: ["ESTIMATED_EARNINGS"],
+        sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
+      } as any),
+      client.generateNetworkReport(account_id, {
+        dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+        dimensions: ["AD_UNIT"],
+        metrics: ["ESTIMATED_EARNINGS"],
+        sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
+      } as any),
+    ]);
+
+    function pareto(data: unknown, dimKey: string): string {
+      const rows = parseReportRows(data);
+      const total = rows.reduce((s, r) => s + parseInt(r.ESTIMATED_EARNINGS || "0", 10), 0);
+      if (total === 0) return `No earnings data for ${dimKey}.`;
+
+      let cumulative = 0;
+      const table = rows.map((r, i) => {
+        const e = parseInt(r.ESTIMATED_EARNINGS || "0", 10);
+        cumulative += e;
+        return {
+          RANK: String(i + 1),
+          [dimKey]: r[dimKey],
+          ESTIMATED_EARNINGS: String(e),
+          "SHARE_%": `${((e / total) * 100).toFixed(1)}%`,
+          "CUMULATIVE_%": `${((cumulative / total) * 100).toFixed(1)}%`,
+        };
+      });
+
+      // Find where 80% of revenue is reached
+      const idx80 = table.findIndex((r) => parseFloat(r["CUMULATIVE_%"]) >= 80);
+      const top = table.slice(0, Math.max((idx80 ?? 0) + 1, 5));
+      const summary = `Top ${idx80 + 1} of ${rows.length} ${dimKey.toLowerCase()}s account for 80%+ of revenue.`;
+      return formatReportTable(top, { title: `${dimKey} Concentration` }) + `\n${summary}`;
+    }
+
+    const sections = [
+      pareto(byApp, "APP"),
+      pareto(byCountry, "COUNTRY"),
+      pareto(byAdUnit, "AD_UNIT"),
+    ];
+
+    return {
+      content: [{
+        type: "text",
+        text: `Revenue Concentration Analysis (last ${n} days)\n${"=".repeat(50)}\n\n${sections.join("\n\n")}`,
+      }],
+    };
+  }
+);
+
 // --- Start Server ---
 
 async function main() {

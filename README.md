@@ -104,6 +104,7 @@ Just ask Claude a question about your AdMob data in natural language. On first u
 | `best_worst_days` | "What were my best and worst days this month?" |
 | `weekday_vs_weekend` | "Do I earn more on weekdays or weekends?" |
 | `platform_format_matrix` | "Which formats perform best on each platform?" |
+| `revenue_concentration` | "How diversified is my revenue?" |
 
 ## Project structure
 
