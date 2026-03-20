@@ -184,7 +184,7 @@ Note: ESTIMATED_EARNINGS is in micros (divide by 1,000,000 for actual currency).
     if (dimension_filters) {
       reportSpec.dimensionFilters = dimension_filters.map((f) => ({
         dimension: f.dimension,
-        matchesAny: { values: f.values },
+        matches_any: { values: f.values },
       }));
     }
     if (sort_conditions) reportSpec.sortConditions = sort_conditions;
@@ -268,7 +268,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
     if (dimension_filters) {
       reportSpec.dimensionFilters = dimension_filters.map((f) => ({
         dimension: f.dimension,
-        matchesAny: { values: f.values },
+        matches_any: { values: f.values },
       }));
     }
     if (sort_conditions) reportSpec.sortConditions = sort_conditions;
@@ -683,7 +683,7 @@ server.tool(
       maxReportRows: 20,
     };
     if (app_id) {
-      spec.dimensionFilters = [{ dimension: "APP", matchesAny: { values: [app_id] } }];
+      spec.dimensionFilters = [{ dimension: "APP", matches_any: { values: [app_id] } }];
     }
     const result = await client.generateNetworkReport(account_id, spec);
     const rows = parseReportRows(result);
@@ -796,7 +796,7 @@ server.tool(
       maxReportRows: 20,
     };
     if (platform) {
-      spec.dimensionFilters = [{ dimension: "PLATFORM", matchesAny: { values: [platform] } }];
+      spec.dimensionFilters = [{ dimension: "PLATFORM", matches_any: { values: [platform] } }];
     }
     const result = await client.generateNetworkReport(account_id, spec);
     const rows = parseReportRows(result);
@@ -903,7 +903,7 @@ server.tool(
     if (countries && countries.length > 0) {
       spec.dimensionFilters = [{
         dimension: "COUNTRY",
-        matchesAny: { values: countries },
+        matches_any: { values: countries },
       }];
     }
     const result = await client.generateNetworkReport(account_id, spec);
@@ -1187,7 +1187,7 @@ server.tool(
       sortConditions: [{ dimension: "DATE", order: "ASCENDING" }],
     };
     if (ad_source) {
-      spec.dimensionFilters = [{ dimension: "AD_SOURCE", matchesAny: { values: [ad_source] } }];
+      spec.dimensionFilters = [{ dimension: "AD_SOURCE", matches_any: { values: [ad_source] } }];
     }
     const result = await client.generateMediationReport(account_id, spec);
     const rows = parseReportRows(result);
@@ -1208,28 +1208,28 @@ server.tool(
   async ({ account_id, app_id, days }) => {
     const n = days || 7;
     const client = await getClient();
-    const filter = [{ dimension: "APP", matchesAny: { values: [app_id] } }];
+    const filter = [{ dimension: "APP", matches_any: { values: [app_id] } }];
 
     const [byAdUnit, byFormat, byPlatform] = await Promise.all([
       client.generateNetworkReport(account_id, {
         dateRange: { startDate: daysAgo(n), endDate: yesterday() },
         dimensions: ["AD_UNIT"],
         metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "IMPRESSION_RPM", "IMPRESSION_CTR", "MATCH_RATE", "SHOW_RATE"],
-        dimensionFilters: filter,
+        dimension_filters: filter,
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any),
       client.generateNetworkReport(account_id, {
         dateRange: { startDate: daysAgo(n), endDate: yesterday() },
         dimensions: ["FORMAT"],
         metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "IMPRESSION_RPM", "IMPRESSION_CTR"],
-        dimensionFilters: filter,
+        dimension_filters: filter,
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any),
       client.generateNetworkReport(account_id, {
         dateRange: { startDate: daysAgo(n), endDate: yesterday() },
         dimensions: ["PLATFORM"],
         metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS", "IMPRESSION_RPM", "MATCH_RATE"],
-        dimensionFilters: filter,
+        dimension_filters: filter,
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any),
     ]);
@@ -1331,7 +1331,7 @@ server.tool(
       sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
     };
     if (ad_source) {
-      spec.dimensionFilters = [{ dimension: "AD_SOURCE", matchesAny: { values: [ad_source] } }];
+      spec.dimensionFilters = [{ dimension: "AD_SOURCE", matches_any: { values: [ad_source] } }];
     }
     const result = await client.generateMediationReport(account_id, spec);
     const rows = parseReportRows(result);
