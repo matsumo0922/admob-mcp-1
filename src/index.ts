@@ -1197,6 +1197,58 @@ server.tool(
   }
 );
 
+server.tool(
+  "app_deep_dive",
+  "Full breakdown of a single app: ad units, formats, and platforms. Use for: 'Give me a full breakdown for my top app', 'Deep dive into app performance'",
+  {
+    account_id: z.string().describe("AdMob account ID"),
+    app_id: z.string().describe("App ID to analyze (e.g. ca-app-pub-1234~5678)"),
+    days: z.number().optional().describe("Lookback period in days (default 7)"),
+  },
+  async ({ account_id, app_id, days }) => {
+    const n = days || 7;
+    const client = await getClient();
+    const filter = [{ dimension: "APP", matchesAny: { values: [{ value: app_id }] } }];
+
+    const [byAdUnit, byFormat, byPlatform] = await Promise.all([
+      client.generateNetworkReport(account_id, {
+        dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+        dimensions: ["AD_UNIT"],
+        metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "IMPRESSION_RPM", "IMPRESSION_CTR", "MATCH_RATE", "SHOW_RATE"],
+        dimensionFilters: filter,
+        sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
+      } as any),
+      client.generateNetworkReport(account_id, {
+        dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+        dimensions: ["FORMAT"],
+        metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "IMPRESSION_RPM", "IMPRESSION_CTR"],
+        dimensionFilters: filter,
+        sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
+      } as any),
+      client.generateNetworkReport(account_id, {
+        dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+        dimensions: ["PLATFORM"],
+        metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS", "IMPRESSION_RPM", "MATCH_RATE"],
+        dimensionFilters: filter,
+        sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
+      } as any),
+    ]);
+
+    const sections = [
+      formatReportTable(parseReportRows(byAdUnit), { title: "By Ad Unit" }),
+      formatReportTable(parseReportRows(byFormat), { title: "By Format" }),
+      formatReportTable(parseReportRows(byPlatform), { title: "By Platform" }),
+    ];
+
+    return {
+      content: [{
+        type: "text",
+        text: `App Deep Dive: ${app_id} (last ${n} days)\n${"=".repeat(50)}\n\n${sections.join("\n\n")}`,
+      }],
+    };
+  }
+);
+
 // --- Start Server ---
 
 async function main() {
