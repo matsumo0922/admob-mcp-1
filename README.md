@@ -109,6 +109,7 @@ Just ask Claude a question about your AdMob data in natural language. On first u
 | `app_deep_dive` | "Give me a full breakdown for my top app" |
 | `anomaly_detection` | "Flag any unusual days in the last 30 days" |
 | `ad_source_instance_comparison` | "Compare ad instances within each mediation source" |
+| `yoy_comparison` | "How does this month compare to the same month last year?" |
 
 ## Project structure
 

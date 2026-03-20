@@ -1341,6 +1341,67 @@ server.tool(
   }
 );
 
+server.tool(
+  "yoy_comparison",
+  "Compare this month (or a recent period) to the same period last year. Use for: 'How does this month compare to the same month last year?', 'Year-over-year revenue comparison'",
+  {
+    account_id: z.string().describe("AdMob account ID"),
+    months: z.number().optional().describe("Number of recent months to compare (default 1)"),
+  },
+  async ({ account_id, months }) => {
+    const n = months || 1;
+    const client = await getClient();
+    const now = new Date();
+
+    // Current period: last N months up to yesterday
+    const currentStart = new Date(now.getFullYear(), now.getMonth() - n + 1, 1);
+    // Same period last year
+    const lastYearStart = new Date(currentStart.getFullYear() - 1, currentStart.getMonth(), 1);
+    const lastYearEnd = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate() - 1);
+
+    const toDateObj = (d: Date) => ({ year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() });
+
+    const [currentResult, lastYearResult] = await Promise.all([
+      client.generateNetworkReport(account_id, {
+        dateRange: { startDate: toDateObj(currentStart), endDate: yesterday() },
+        dimensions: ["MONTH"],
+        metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS", "IMPRESSION_RPM", "IMPRESSION_CTR"],
+        sortConditions: [{ dimension: "MONTH", order: "ASCENDING" }],
+      } as any),
+      client.generateNetworkReport(account_id, {
+        dateRange: { startDate: toDateObj(lastYearStart), endDate: toDateObj(lastYearEnd) },
+        dimensions: ["MONTH"],
+        metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS", "IMPRESSION_RPM", "IMPRESSION_CTR"],
+        sortConditions: [{ dimension: "MONTH", order: "ASCENDING" }],
+      } as any),
+    ]);
+
+    const currentRows = parseReportRows(currentResult);
+    const lastYearRows = parseReportRows(lastYearResult);
+
+    // Build comparison rows
+    const comparison: Array<Record<string, string>> = [];
+    for (let i = 0; i < currentRows.length; i++) {
+      const curr = currentRows[i];
+      const prev = lastYearRows[i];
+      const row: Record<string, string> = { MONTH_THIS_YEAR: curr.MONTH || "" };
+      if (prev) {
+        row["MONTH_LAST_YEAR"] = prev.MONTH || "";
+      }
+      for (const key of ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS", "IMPRESSION_RPM", "IMPRESSION_CTR"]) {
+        row[`${key}_NOW`] = curr[key] || "0";
+        row[`${key}_LAST_YR`] = prev?.[key] || "0";
+        row[`${key}_YOY`] = pctChange(prev?.[key] || "0", curr[key] || "0");
+      }
+      comparison.push(row);
+    }
+
+    return {
+      content: [{ type: "text", text: formatReportTable(comparison, { title: `Year-over-Year Comparison (${n} month${n > 1 ? "s" : ""})` }) }],
+    };
+  }
+);
+
 // --- Start Server ---
 
 async function main() {
