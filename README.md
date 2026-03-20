@@ -108,6 +108,7 @@ Just ask Claude a question about your AdMob data in natural language. On first u
 | `ad_source_trend` | "How are my mediation sources trending?" |
 | `app_deep_dive` | "Give me a full breakdown for my top app" |
 | `anomaly_detection` | "Flag any unusual days in the last 30 days" |
+| `ad_source_instance_comparison` | "Compare ad instances within each mediation source" |
 
 ## Project structure
 

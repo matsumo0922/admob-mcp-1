@@ -1313,6 +1313,34 @@ server.tool(
   }
 );
 
+server.tool(
+  "ad_source_instance_comparison",
+  "Compare individual ad source instances within mediation waterfalls. Use for: 'Compare ad instances within each mediation source', 'Which waterfall instances perform best?'",
+  {
+    account_id: z.string().describe("AdMob account ID"),
+    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    ad_source: z.string().optional().describe("Filter to a specific ad source"),
+  },
+  async ({ account_id, days, ad_source }) => {
+    const n = days || 7;
+    const client = await getClient();
+    const spec: any = {
+      dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+      dimensions: ["AD_SOURCE", "AD_SOURCE_INSTANCE"],
+      metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "MATCHED_REQUESTS", "MATCH_RATE", "OBSERVED_ECPM"],
+      sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
+    };
+    if (ad_source) {
+      spec.dimensionFilters = [{ dimension: "AD_SOURCE", matchesAny: { values: [{ value: ad_source }] } }];
+    }
+    const result = await client.generateMediationReport(account_id, spec);
+    const rows = parseReportRows(result);
+    return {
+      content: [{ type: "text", text: formatReportTable(rows, { title: `Ad Source Instance Comparison (last ${n} days)` }) }],
+    };
+  }
+);
+
 // --- Start Server ---
 
 async function main() {
