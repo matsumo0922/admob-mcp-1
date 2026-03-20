@@ -914,6 +914,72 @@ server.tool(
   }
 );
 
+server.tool(
+  "revenue_pacing",
+  "Project end-of-month revenue based on current daily run rate vs last month. Use for: 'Am I on track to hit last month's revenue?', 'What's my projected revenue this month?'",
+  {
+    account_id: z.string().describe("AdMob account ID"),
+  },
+  async ({ account_id }) => {
+    const client = await getClient();
+    const now = new Date();
+    const dayOfMonth = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysElapsed = dayOfMonth - 1; // completed days (yesterday is the last full day)
+
+    // Current month so far
+    const currentMonthStart = { year: now.getFullYear(), month: now.getMonth() + 1, day: 1 };
+    const [currentResult, lastMonthResult] = await Promise.all([
+      client.generateNetworkReport(account_id, {
+        dateRange: { startDate: currentMonthStart, endDate: yesterday() },
+        metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS", "IMPRESSION_RPM"],
+      } as any),
+      client.generateNetworkReport(account_id, {
+        dateRange: {
+          startDate: { year: now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear(), month: now.getMonth() === 0 ? 12 : now.getMonth(), day: 1 },
+          endDate: { year: now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear(), month: now.getMonth() === 0 ? 12 : now.getMonth(), day: new Date(now.getFullYear(), now.getMonth(), 0).getDate() },
+        },
+        metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS", "IMPRESSION_RPM"],
+      } as any),
+    ]);
+
+    const currentRows = parseReportRows(currentResult);
+    const lastMonthRows = parseReportRows(lastMonthResult);
+
+    const currentEarnings = currentRows.reduce((s, r) => s + parseInt(r.ESTIMATED_EARNINGS || "0", 10), 0);
+    const lastMonthEarnings = lastMonthRows.reduce((s, r) => s + parseInt(r.ESTIMATED_EARNINGS || "0", 10), 0);
+    const currentImpressions = currentRows.reduce((s, r) => s + parseInt(r.IMPRESSIONS || "0", 10), 0);
+    const lastMonthImpressions = lastMonthRows.reduce((s, r) => s + parseInt(r.IMPRESSIONS || "0", 10), 0);
+
+    const dailyAvgEarnings = daysElapsed > 0 ? currentEarnings / daysElapsed : 0;
+    const projectedEarnings = dailyAvgEarnings * daysInMonth;
+    const dailyAvgImpressions = daysElapsed > 0 ? currentImpressions / daysElapsed : 0;
+    const projectedImpressions = Math.round(dailyAvgImpressions * daysInMonth);
+
+    const earningsPct = lastMonthEarnings > 0 ? ((projectedEarnings / lastMonthEarnings - 1) * 100).toFixed(1) : "N/A";
+    const impressionsPct = lastMonthImpressions > 0 ? ((projectedImpressions / lastMonthImpressions - 1) * 100).toFixed(1) : "N/A";
+
+    const micro = (v: number) => `$${(v / 1_000_000).toFixed(2)}`;
+
+    const lines = [
+      `Revenue Pacing Report`,
+      `${"=".repeat(50)}`,
+      ``,
+      `Current month: ${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
+      `Days elapsed: ${daysElapsed} / ${daysInMonth}`,
+      ``,
+      `              This Month (so far)  Projected       Last Month      vs Last Month`,
+      `Earnings      ${micro(currentEarnings).padEnd(20)} ${micro(projectedEarnings).padEnd(16)} ${micro(lastMonthEarnings).padEnd(16)} ${earningsPct}%`,
+      `Impressions   ${String(currentImpressions).padEnd(20)} ${String(projectedImpressions).padEnd(16)} ${String(lastMonthImpressions).padEnd(16)} ${impressionsPct}%`,
+      ``,
+      `Daily avg earnings: ${micro(dailyAvgEarnings)}`,
+      `Daily avg impressions: ${Math.round(dailyAvgImpressions).toLocaleString()}`,
+    ];
+
+    return { content: [{ type: "text", text: lines.join("\n") }] };
+  }
+);
+
 // --- Start Server ---
 
 async function main() {
