@@ -100,6 +100,9 @@ Just ask Claude a question about your AdMob data in natural language. On first u
 | `mediation_group_analysis` | "Which mediation groups need optimization?" |
 | `country_ecpm_opportunity` | "Where can I improve eCPM by country?" |
 | `format_by_country` | "Which ad formats work best in which countries?" |
+| `revenue_pacing` | "Am I on track to hit last month's revenue?" |
+| `best_worst_days` | "What were my best and worst days this month?" |
+| `weekday_vs_weekend` | "Do I earn more on weekdays or weekends?" |
 
 ## Project structure
 

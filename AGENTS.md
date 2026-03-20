@@ -13,7 +13,7 @@ npm run start      # run server on stdio
 
 ## Project Layout
 
-- `src/index.ts` — MCP server entry point, all 26 tool definitions (6 core + 10 reporting + 10 optimization)
+- `src/index.ts` — MCP server entry point, all tool definitions (6 core + 10 reporting + 13 optimization)
 - `src/auth.ts` — OAuth 2.0 flow: token storage, refresh, local redirect server on port 8089
 - `src/admob-client.ts` — Thin REST client over `https://admob.googleapis.com/v1`
 - `src/helpers.ts` — Date math (`daysAgo`, `yesterday`), report row parsing (`parseReportRows`), table formatting (`formatReportTable`), period-over-period change utils (`pctChange`, `addPeriodChanges`)
@@ -27,7 +27,7 @@ npm run start      # run server on stdio
 
 **Reporting** (10): `revenue_trend`, `ad_unit_performance`, `country_breakdown`, `format_comparison`, `platform_comparison`, `fill_rate_analysis`, `mediation_ad_source_performance`, `wow_revenue`, `top_apps`, `ecpm_trend`
 
-**Revenue Optimization** (10): `revenue_drop_diagnosis`, `serving_restriction_impact`, `app_version_impact`, `sdk_version_check`, `month_over_month`, `high_impression_low_ctr`, `os_version_performance`, `mediation_group_analysis`, `country_ecpm_opportunity`, `format_by_country`
+**Revenue Optimization** (13): `revenue_drop_diagnosis`, `serving_restriction_impact`, `app_version_impact`, `sdk_version_check`, `month_over_month`, `high_impression_low_ctr`, `os_version_performance`, `mediation_group_analysis`, `country_ecpm_opportunity`, `format_by_country`, `revenue_pacing`, `best_worst_days`, `weekday_vs_weekend`
 
 ## Key Patterns
 
