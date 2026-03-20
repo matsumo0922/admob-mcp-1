@@ -39,6 +39,11 @@ npm run start      # run server on stdio
 - Optimization tools like `revenue_drop_diagnosis` make parallel API calls to compare periods across multiple dimensions
 - The `setup.sh` script auto-detects `client_secret_*.apps.googleusercontent.com.json` files in `secrets/` and renames to `client_secret.json`
 
+## Contribution Rules
+
+- When adding a new tool, always update the tools table in `README.md` to document it with a prompt example.
+- Also update the tool count and tool list in this file (`AGENTS.md`).
+
 ## Secrets
 
 Never commit files into `secrets/` beyond `.gitkeep`. The `.gitignore` is configured to ignore `secrets/*` but allow `secrets/.gitkeep`. This directory holds OAuth credentials and tokens.
