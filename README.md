@@ -105,6 +105,7 @@ Just ask Claude a question about your AdMob data in natural language. On first u
 | `weekday_vs_weekend` | "Do I earn more on weekdays or weekends?" |
 | `platform_format_matrix` | "Which formats perform best on each platform?" |
 | `revenue_concentration` | "How diversified is my revenue?" |
+| `ad_source_trend` | "How are my mediation sources trending?" |
 
 ## Project structure
 

@@ -1169,6 +1169,34 @@ server.tool(
   }
 );
 
+server.tool(
+  "ad_source_trend",
+  "Show mediation ad source performance over time to catch declining demand partners. Use for: 'How are my mediation sources trending?', 'Is Meta/Unity ad revenue declining?'",
+  {
+    account_id: z.string().describe("AdMob account ID"),
+    days: z.number().optional().describe("Lookback period in days (default 14)"),
+    ad_source: z.string().optional().describe("Filter to a specific ad source name"),
+  },
+  async ({ account_id, days, ad_source }) => {
+    const n = days || 14;
+    const client = await getClient();
+    const spec: any = {
+      dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+      dimensions: ["DATE", "AD_SOURCE"],
+      metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "OBSERVED_ECPM", "MATCH_RATE"],
+      sortConditions: [{ dimension: "DATE", order: "ASCENDING" }],
+    };
+    if (ad_source) {
+      spec.dimensionFilters = [{ dimension: "AD_SOURCE", matchesAny: { values: [{ value: ad_source }] } }];
+    }
+    const result = await client.generateMediationReport(account_id, spec);
+    const rows = parseReportRows(result);
+    return {
+      content: [{ type: "text", text: formatReportTable(rows, { title: `Mediation Ad Source Trend (last ${n} days)` }) }],
+    };
+  }
+);
+
 // --- Start Server ---
 
 async function main() {
