@@ -980,6 +980,38 @@ server.tool(
   }
 );
 
+server.tool(
+  "best_worst_days",
+  "Find the best and worst performing days in a period. Use for: 'What were my best and worst days this month?', 'Show my peak revenue days'",
+  {
+    account_id: z.string().describe("AdMob account ID"),
+    days: z.number().optional().describe("Lookback period in days (default 30)"),
+    top_n: z.number().optional().describe("Number of best/worst days to show (default 5)"),
+  },
+  async ({ account_id, days, top_n }) => {
+    const n = days || 30;
+    const count = top_n || 5;
+    const client = await getClient();
+    const result = await client.generateNetworkReport(account_id, {
+      dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+      dimensions: ["DATE"],
+      metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS", "IMPRESSION_RPM"],
+      sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
+    } as any);
+    const rows = parseReportRows(result);
+
+    const best = rows.slice(0, count);
+    const worst = [...rows].reverse().slice(0, count);
+
+    const sections = [
+      formatReportTable(best, { title: `Top ${count} Revenue Days (last ${n} days)` }),
+      formatReportTable(worst, { title: `Bottom ${count} Revenue Days (last ${n} days)` }),
+    ];
+
+    return { content: [{ type: "text", text: sections.join("\n\n") }] };
+  }
+);
+
 // --- Start Server ---
 
 async function main() {
