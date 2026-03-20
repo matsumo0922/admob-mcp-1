@@ -1012,6 +1012,68 @@ server.tool(
   }
 );
 
+server.tool(
+  "weekday_vs_weekend",
+  "Compare weekday vs weekend ad performance. Use for: 'Do I earn more on weekdays or weekends?', 'Weekday vs weekend revenue comparison'",
+  {
+    account_id: z.string().describe("AdMob account ID"),
+    days: z.number().optional().describe("Lookback period in days (default 28, uses multiples of 7 for fairness)"),
+  },
+  async ({ account_id, days }) => {
+    const n = days || 28;
+    const client = await getClient();
+    const result = await client.generateNetworkReport(account_id, {
+      dateRange: { startDate: daysAgo(n), endDate: yesterday() },
+      dimensions: ["DATE"],
+      metrics: ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS", "IMPRESSION_RPM", "IMPRESSION_CTR"],
+      sortConditions: [{ dimension: "DATE", order: "ASCENDING" }],
+    } as any);
+    const rows = parseReportRows(result);
+
+    const weekday: Array<Record<string, string>> = [];
+    const weekend: Array<Record<string, string>> = [];
+
+    for (const row of rows) {
+      const dateStr = row.DATE || "";
+      // DATE format is YYYYMMDD
+      const y = parseInt(dateStr.slice(0, 4), 10);
+      const m = parseInt(dateStr.slice(4, 6), 10) - 1;
+      const d = parseInt(dateStr.slice(6, 8), 10);
+      const dayOfWeek = new Date(y, m, d).getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        weekend.push(row);
+      } else {
+        weekday.push(row);
+      }
+    }
+
+    function avg(arr: Array<Record<string, string>>, key: string): number {
+      if (arr.length === 0) return 0;
+      return arr.reduce((s, r) => s + parseFloat(r[key] || "0"), 0) / arr.length;
+    }
+
+    const metrics = ["ESTIMATED_EARNINGS", "IMPRESSIONS", "AD_REQUESTS", "IMPRESSION_RPM", "IMPRESSION_CTR"];
+    const summary = [
+      { PERIOD: "Weekday avg", DAYS: String(weekday.length) },
+      { PERIOD: "Weekend avg", DAYS: String(weekend.length) },
+    ];
+    for (const m of metrics) {
+      (summary[0] as any)[m] = String(Math.round(avg(weekday, m)));
+      (summary[1] as any)[m] = String(Math.round(avg(weekend, m)));
+    }
+
+    const diff: Record<string, string> = { PERIOD: "Weekend vs Weekday", DAYS: "-" };
+    for (const m of metrics) {
+      diff[m] = pctChange((summary[0] as any)[m], (summary[1] as any)[m]);
+    }
+    summary.push(diff as any);
+
+    return {
+      content: [{ type: "text", text: formatReportTable(summary, { title: `Weekday vs Weekend Performance (last ${n} days)` }) }],
+    };
+  }
+);
+
 // --- Start Server ---
 
 async function main() {
