@@ -33,9 +33,9 @@ function formatResult(data: unknown): string {
 
 // Date schema reusable across tools
 const DateSchema = z.object({
-  year: z.number().describe("Year (e.g. 2024)"),
-  month: z.number().min(1).max(12).describe("Month (1-12)"),
-  day: z.number().min(1).max(31).describe("Day (1-31)"),
+  year: z.coerce.number().describe("Year (e.g. 2024)"),
+  month: z.coerce.number().min(1).max(12).describe("Month (1-12)"),
+  day: z.coerce.number().min(1).max(31).describe("Day (1-31)"),
 });
 
 const DimensionFilterSchema = z.object({
@@ -151,7 +151,7 @@ Note: ESTIMATED_EARNINGS is in micros (divide by 1,000,000 for actual currency).
       .array(SortConditionSchema)
       .optional()
       .describe("Sort conditions"),
-    max_report_rows: z.number().optional().describe("Max rows (1-100000)"),
+    max_report_rows: z.coerce.number().optional().describe("Max rows (1-100000)"),
     time_zone: z.string().optional().describe("IANA timezone"),
     currency_code: z
       .string()
@@ -235,7 +235,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       .array(SortConditionSchema)
       .optional()
       .describe("Sort conditions"),
-    max_report_rows: z.number().optional().describe("Max rows (1-100000)"),
+    max_report_rows: z.coerce.number().optional().describe("Max rows (1-100000)"),
     time_zone: z.string().optional().describe("IANA timezone"),
     currency_code: z
       .string()
@@ -293,7 +293,7 @@ server.tool(
   "Show daily revenue trend over a recent period. Use for: 'Show my revenue trend for the last 30 days'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Number of days to look back (default 30)"),
+    days: z.coerce.number().optional().describe("Number of days to look back (default 30)"),
   },
   async ({ account_id, days }) => {
     const n = days || 30;
@@ -316,7 +316,7 @@ server.tool(
   "Compare all ad units by key metrics to find underperformers. Use for: 'Which ad units are underperforming?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -339,8 +339,8 @@ server.tool(
   "Break down earnings by country. Use for: 'Break down my earnings by country'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
-    top_n: z.number().optional().describe("Number of top countries to return (default 20)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
+    top_n: z.coerce.number().optional().describe("Number of top countries to return (default 20)"),
   },
   async ({ account_id, days, top_n }) => {
     const n = days || 7;
@@ -364,7 +364,7 @@ server.tool(
   "Compare performance across ad formats (banner, interstitial, rewarded, native). Use for: 'Compare performance across ad formats'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -387,7 +387,7 @@ server.tool(
   "Compare iOS vs Android performance. Use for: 'How is iOS vs Android performing?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -410,7 +410,7 @@ server.tool(
   "Analyze fill rate and match rate by ad unit to find where you're losing impressions. Use for: 'What's my fill rate and where am I losing money?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -433,7 +433,7 @@ server.tool(
   "Compare mediation ad source performance (AdMob Network, Meta, Unity, etc). Use for: 'Which mediation ad sources perform best?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -456,7 +456,7 @@ server.tool(
   "Show week-over-week revenue comparison. Use for: 'Show week-over-week revenue changes'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    weeks: z.number().optional().describe("Number of weeks to show (default 8)"),
+    weeks: z.coerce.number().optional().describe("Number of weeks to show (default 8)"),
   },
   async ({ account_id, weeks }) => {
     const n = weeks || 8;
@@ -493,8 +493,8 @@ server.tool(
   "Rank apps by revenue. Use for: 'Which apps are my top earners?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
-    top_n: z.number().optional().describe("Number of top apps (default 10)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
+    top_n: z.coerce.number().optional().describe("Number of top apps (default 10)"),
   },
   async ({ account_id, days, top_n }) => {
     const n = days || 7;
@@ -518,7 +518,7 @@ server.tool(
   "Show eCPM trends over time, optionally broken down by ad unit. Use for: 'Show my eCPM trends by ad unit over time'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 14)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 14)"),
     by_ad_unit: z.boolean().optional().describe("Break down by ad unit (default false)"),
   },
   async ({ account_id, days, by_ad_unit }) => {
@@ -545,7 +545,7 @@ server.tool(
   "Diagnose a revenue drop by comparing two periods across multiple dimensions. Use for: 'My revenue dropped this week, what happened?', 'Why did my earnings go down?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Length of each period in days (default 7). Compares the last N days vs the N days before that."),
+    days: z.coerce.number().optional().describe("Length of each period in days (default 7). Compares the last N days vs the N days before that."),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -635,7 +635,7 @@ server.tool(
   "Measure revenue impact of ad serving restrictions (non-personalized ads due to privacy regulations like GDPR/CCPA). Use for: 'How much revenue am I losing to privacy restrictions?', 'What is the GDPR impact on my ads?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -669,7 +669,7 @@ server.tool(
   "Compare ad performance across app versions to see if a release helped or hurt revenue. Use for: 'Did my latest app update affect ad revenue?', 'Compare ad revenue across app versions'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 14)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 14)"),
     app_id: z.string().optional().describe("Filter to a specific app ID"),
   },
   async ({ account_id, days, app_id }) => {
@@ -698,7 +698,7 @@ server.tool(
   "Check if older GMA SDK versions are hurting ad performance. Use for: 'Are users on old SDK versions seeing lower eCPM?', 'Check SDK version performance'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -722,7 +722,7 @@ server.tool(
   "Compare this month's performance to last month. Use for: 'How is this month comparing to last month?', 'Month-over-month revenue comparison'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    months: z.number().optional().describe("Number of months to show (default 6)"),
+    months: z.coerce.number().optional().describe("Number of months to show (default 6)"),
   },
   async ({ account_id, months }) => {
     const n = months || 6;
@@ -746,7 +746,7 @@ server.tool(
   "Find ad units with high impressions but low CTR — potential optimization targets. Use for: 'Which ad units have wasted impressions?', 'Find ad placements I should optimize'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -782,7 +782,7 @@ server.tool(
   "Check ad performance by mobile OS version to find problem versions. Use for: 'Are certain OS versions hurting my ad revenue?', 'Check performance by iOS/Android version'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
     platform: z.enum(["ANDROID", "IOS"]).optional().describe("Filter to a specific platform"),
   },
   async ({ account_id, days, platform }) => {
@@ -811,7 +811,7 @@ server.tool(
   "Analyze performance by mediation group to find which waterfall/bidding groups need tuning. Use for: 'Which mediation groups need optimization?', 'Show mediation waterfall performance'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -834,7 +834,7 @@ server.tool(
   "Find countries with high impression volume but low eCPM — potential for geo-targeted optimization. Use for: 'Where can I improve eCPM by country?', 'Find countries where I'm leaving money on the table'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -887,7 +887,7 @@ server.tool(
   "Cross-reference ad format performance by country to find geo-specific format opportunities. Use for: 'Which ad formats work best in which countries?', 'Should I use different formats for different regions?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
     countries: z.array(z.string()).optional().describe("Filter to specific country codes (e.g. ['US','DE','JP']). Default: top 5 by revenue."),
   },
   async ({ account_id, days, countries }) => {
@@ -985,8 +985,8 @@ server.tool(
   "Find the best and worst performing days in a period. Use for: 'What were my best and worst days this month?', 'Show my peak revenue days'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 30)"),
-    top_n: z.number().optional().describe("Number of best/worst days to show (default 5)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 30)"),
+    top_n: z.coerce.number().optional().describe("Number of best/worst days to show (default 5)"),
   },
   async ({ account_id, days, top_n }) => {
     const n = days || 30;
@@ -1017,7 +1017,7 @@ server.tool(
   "Compare weekday vs weekend ad performance. Use for: 'Do I earn more on weekdays or weekends?', 'Weekday vs weekend revenue comparison'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 28, uses multiples of 7 for fairness)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 28, uses multiples of 7 for fairness)"),
   },
   async ({ account_id, days }) => {
     const n = days || 28;
@@ -1079,7 +1079,7 @@ server.tool(
   "Cross-reference platform and ad format to see which formats perform best on each platform. Use for: 'Which formats perform best on each platform?', 'Compare rewarded ads on iOS vs Android'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -1102,7 +1102,7 @@ server.tool(
   "Pareto analysis of revenue concentration across apps, countries, and ad units. Use for: 'How diversified is my revenue?', 'Am I too dependent on one country or app?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, days }) => {
     const n = days || 7;
@@ -1174,7 +1174,7 @@ server.tool(
   "Show mediation ad source performance over time to catch declining demand partners. Use for: 'How are my mediation sources trending?', 'Is Meta/Unity ad revenue declining?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 14)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 14)"),
     ad_source: z.string().optional().describe("Filter to a specific ad source name"),
   },
   async ({ account_id, days, ad_source }) => {
@@ -1203,7 +1203,7 @@ server.tool(
   {
     account_id: z.string().describe("AdMob account ID"),
     app_id: z.string().describe("App ID to analyze (e.g. ca-app-pub-1234~5678)"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
   },
   async ({ account_id, app_id, days }) => {
     const n = days || 7;
@@ -1254,8 +1254,8 @@ server.tool(
   "Flag days with unusual revenue or impression changes vs rolling average. Use for: 'Flag any unusual days in the last 30 days', 'Were there any anomalies in my revenue?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 30)"),
-    threshold: z.number().optional().describe("% deviation from rolling average to flag (default 30)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 30)"),
+    threshold: z.coerce.number().optional().describe("% deviation from rolling average to flag (default 30)"),
   },
   async ({ account_id, days, threshold }) => {
     const n = days || 30;
@@ -1318,7 +1318,7 @@ server.tool(
   "Compare individual ad source instances within mediation waterfalls. Use for: 'Compare ad instances within each mediation source', 'Which waterfall instances perform best?'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    days: z.number().optional().describe("Lookback period in days (default 7)"),
+    days: z.coerce.number().optional().describe("Lookback period in days (default 7)"),
     ad_source: z.string().optional().describe("Filter to a specific ad source"),
   },
   async ({ account_id, days, ad_source }) => {
@@ -1346,7 +1346,7 @@ server.tool(
   "Compare this month (or a recent period) to the same period last year. Use for: 'How does this month compare to the same month last year?', 'Year-over-year revenue comparison'",
   {
     account_id: z.string().describe("AdMob account ID"),
-    months: z.number().optional().describe("Number of recent months to compare (default 1)"),
+    months: z.coerce.number().optional().describe("Number of recent months to compare (default 1)"),
   },
   async ({ account_id, months }) => {
     const n = months || 1;
