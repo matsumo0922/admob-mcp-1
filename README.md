@@ -33,6 +33,12 @@ The setup script will:
 - Open a browser for Google OAuth authorization (token saved to `secrets/token.json`)
 - Register the MCP server with Claude Code
 
+To re-authorize with updated scopes (e.g. after adding another Google MCP):
+
+```bash
+./setup.sh --reauth
+```
+
 > **Note:** If your Google Cloud project's OAuth consent screen has not been published (i.e. it is still in "Testing" status), you will see an authorization error. To fix this, either publish the app or add your Google account as a test user under **OAuth consent screen** > **Audience** in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials/consent).
 
 ## Manual configuration
@@ -118,6 +124,7 @@ admob-mcp/
 ├── src/
 │   ├── index.ts          # MCP server and tool definitions
 │   ├── auth.ts           # OAuth 2.0 flow with local redirect server
+│   ├── authorize.ts      # Standalone CLI script for OAuth authorization
 │   ├── admob-client.ts   # AdMob REST API client
 │   └── helpers.ts        # Date utilities, report parsing, table formatting
 ├── secrets/              # Git-ignored; holds credentials and tokens

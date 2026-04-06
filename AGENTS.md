@@ -13,12 +13,13 @@ npm run start      # run server on stdio
 
 ## Project Layout
 
-- `src/index.ts` — MCP server entry point, all tool definitions (6 core + 10 reporting + 13 optimization)
-- `src/auth.ts` — OAuth 2.0 flow: token storage, refresh, local redirect server on port 8089
+- `src/index.ts` — MCP server entry point, all tool definitions (6 core + 10 reporting + 20 optimization)
+- `src/auth.ts` — OAuth 2.0 flow: token storage, refresh, local redirect server on port 8089. Dynamically merges existing token scopes with AdMob scopes on re-auth to avoid invalidating tokens used by other Google MCPs
+- `src/authorize.ts` — Standalone CLI script for OAuth authorization (run by `setup.sh`)
 - `src/admob-client.ts` — Thin REST client over `https://admob.googleapis.com/v1`
 - `src/helpers.ts` — Date math (`daysAgo`, `yesterday`), report row parsing (`parseReportRows`), table formatting (`formatReportTable`), period-over-period change utils (`pctChange`, `addPeriodChanges`)
 - `secrets/` — Git-ignored contents (only `.gitkeep` is tracked). Holds `client_secret.json` (OAuth creds) and `token.json` (cached token)
-- `setup.sh` — One-command setup: detects and renames credential file, builds, registers MCP server with Claude Code via `claude mcp add`
+- `setup.sh` — One-command setup: detects and renames credential file, builds, registers MCP server with Claude Code via `claude mcp add`. Supports `--reauth` flag to force re-authorization with updated scopes
 - `CLAUDE.md` — Symlink to this file
 
 ## Tool Categories
