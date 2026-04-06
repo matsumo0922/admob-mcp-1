@@ -6,7 +6,7 @@ import * as url from "url";
 
 const TOKEN_PATH = path.join(__dirname, "..", "secrets", "token.json");
 
-const SCOPES = [
+const ADMOB_SCOPES = [
   "https://www.googleapis.com/auth/admob.readonly",
   "https://www.googleapis.com/auth/admob.report",
 ];
@@ -16,6 +16,7 @@ interface StoredTokens {
   refresh_token: string;
   token_type: string;
   expiry_date: number;
+  scope?: string;
 }
 
 function loadClientCredentials(credentialsPath: string) {
@@ -41,6 +42,12 @@ function loadStoredTokens(): StoredTokens | null {
 
 function saveTokens(tokens: StoredTokens) {
   fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
+}
+
+function loadStoredScopes(): string[] | null {
+  const tokens = loadStoredTokens();
+  if (!tokens?.scope) return null;
+  return tokens.scope.split(" ").filter(Boolean);
 }
 
 async function getAuthCodeViaLocalServer(authUrl: string): Promise<string> {
@@ -69,10 +76,12 @@ async function getAuthCodeViaLocalServer(authUrl: string): Promise<string> {
       console.error(`\nWaiting for authorization...\n`);
     });
 
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       server.close();
       reject(new Error("Authorization timed out after 120 seconds"));
     }, 120000);
+
+    server.on("close", () => clearTimeout(timeout));
   });
 }
 
@@ -87,7 +96,12 @@ export async function getAuthenticatedClient(credentialsPath: string) {
 
   const storedTokens = loadStoredTokens();
 
-  if (storedTokens) {
+  // Check if stored token has all required AdMob scopes
+  const hasRequiredScopes =
+    storedTokens?.scope &&
+    ADMOB_SCOPES.every((s) => storedTokens.scope!.includes(s));
+
+  if (storedTokens && hasRequiredScopes) {
     oauth2Client.setCredentials(storedTokens);
 
     // Refresh if expired
@@ -99,6 +113,7 @@ export async function getAuthenticatedClient(credentialsPath: string) {
         refresh_token: credentials.refresh_token || storedTokens.refresh_token,
         token_type: credentials.token_type || "Bearer",
         expiry_date: credentials.expiry_date!,
+        scope: storedTokens.scope,
       };
       saveTokens(updated);
       oauth2Client.setCredentials(updated);
@@ -108,9 +123,23 @@ export async function getAuthenticatedClient(credentialsPath: string) {
   }
 
   // No stored tokens - need to authorize
+  // Merge AdMob scopes with any previously granted scopes to avoid
+  // invalidating tokens used by other MCPs (e.g. Google Analytics)
+  const mergedScopes = [...ADMOB_SCOPES];
+  const existingScopeFile = loadStoredScopes();
+  if (existingScopeFile) {
+    for (const s of existingScopeFile) {
+      if (!mergedScopes.includes(s)) {
+        mergedScopes.push(s);
+      }
+    }
+  }
+
+  console.error("Requesting scopes:", mergedScopes.join(", "));
+
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
-    scope: SCOPES,
+    scope: mergedScopes,
     prompt: "consent",
   });
 
@@ -122,6 +151,7 @@ export async function getAuthenticatedClient(credentialsPath: string) {
     refresh_token: tokens.refresh_token!,
     token_type: tokens.token_type || "Bearer",
     expiry_date: tokens.expiry_date!,
+    scope: tokens.scope || mergedScopes.join(" "),
   };
 
   saveTokens(newTokens);

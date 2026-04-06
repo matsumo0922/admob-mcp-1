@@ -45,9 +45,23 @@ echo "Building..."
 npm run build --prefix "$SCRIPT_DIR"
 
 # 5. Authorize with Google
+REAUTH=false
+for arg in "$@"; do
+  if [ "$arg" = "--reauth" ]; then
+    REAUTH=true
+  fi
+done
+
+if [ "$REAUTH" = true ] && [ -f "$SECRETS_DIR/token.json" ]; then
+  echo
+  echo "Removing existing token for re-authorization..."
+  rm "$SECRETS_DIR/token.json"
+fi
+
 if [ -f "$SECRETS_DIR/token.json" ]; then
   echo
   echo "✓ Already authorized (secrets/token.json exists)"
+  echo "  Run with --reauth to re-authorize with updated scopes."
 else
   echo
   echo "Authorizing with Google AdMob API..."

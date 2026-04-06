@@ -9,6 +9,7 @@ async function main() {
   console.log("Authorizing with Google AdMob API...");
   await getAuthenticatedClient(credentialsPath);
   console.log("Authorization complete! Token saved to secrets/token.json");
+  process.exit(0);
 }
 
 main().catch((err) => {
