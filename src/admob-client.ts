@@ -14,7 +14,7 @@ interface ReportSpec {
   metrics?: string[];
   dimensionFilters?: Array<{
     dimension: string;
-    matchesAny: { values: Array<{ value: string }> };
+    matchesAny: { values: string[] };
   }>;
   sortConditions?: Array<{
     order?: string;
