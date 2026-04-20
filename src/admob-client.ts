@@ -1,4 +1,5 @@
 import { OAuth2Client } from "google-auth-library";
+import { wrapAuthError } from "./auth.js";
 
 const BASE_URL = "https://admob.googleapis.com/v1";
 
@@ -30,7 +31,12 @@ export class AdMobClient {
   constructor(private auth: OAuth2Client) {}
 
   private async request(method: string, path: string, body?: unknown) {
-    const token = await this.auth.getAccessToken();
+    let token;
+    try {
+      token = await this.auth.getAccessToken();
+    } catch (err) {
+      throw wrapAuthError(err);
+    }
     const res = await fetch(`${BASE_URL}${path}`, {
       method,
       headers: {
@@ -42,6 +48,9 @@ export class AdMobClient {
 
     if (!res.ok) {
       const text = await res.text();
+      if (res.status === 401) {
+        throw wrapAuthError(new Error(`invalid_grant: ${text}`));
+      }
       throw new Error(`AdMob API error ${res.status}: ${text}`);
     }
 

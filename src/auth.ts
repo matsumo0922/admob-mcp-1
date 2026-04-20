@@ -11,6 +11,32 @@ const ADMOB_SCOPES = [
   "https://www.googleapis.com/auth/admob.report",
 ];
 
+const REAUTH_HINT =
+  "Run `./setup.sh --reauth` in the admob-mcp directory to re-authorize, then restart the MCP server. " +
+  "If this keeps happening, your Google Cloud OAuth consent screen may be in \"Testing\" mode — refresh tokens expire after 7 days in that mode.";
+
+export class AdMobAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AdMobAuthError";
+  }
+}
+
+export function isInvalidGrantError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /invalid_grant/i.test(msg);
+}
+
+export function wrapAuthError(err: unknown): Error {
+  if (isInvalidGrantError(err)) {
+    const original = err instanceof Error ? err.message : String(err);
+    return new AdMobAuthError(
+      `AdMob OAuth refresh token is invalid or expired (${original}). ${REAUTH_HINT}`
+    );
+  }
+  return err instanceof Error ? err : new Error(String(err));
+}
+
 interface StoredTokens {
   access_token: string;
   refresh_token: string;
@@ -107,16 +133,20 @@ export async function getAuthenticatedClient(credentialsPath: string) {
     // Refresh if expired
     if (storedTokens.expiry_date && storedTokens.expiry_date < Date.now()) {
       console.error("Token expired, refreshing...");
-      const { credentials } = await oauth2Client.refreshAccessToken();
-      const updated: StoredTokens = {
-        access_token: credentials.access_token!,
-        refresh_token: credentials.refresh_token || storedTokens.refresh_token,
-        token_type: credentials.token_type || "Bearer",
-        expiry_date: credentials.expiry_date!,
-        scope: storedTokens.scope,
-      };
-      saveTokens(updated);
-      oauth2Client.setCredentials(updated);
+      try {
+        const { credentials } = await oauth2Client.refreshAccessToken();
+        const updated: StoredTokens = {
+          access_token: credentials.access_token!,
+          refresh_token: credentials.refresh_token || storedTokens.refresh_token,
+          token_type: credentials.token_type || "Bearer",
+          expiry_date: credentials.expiry_date!,
+          scope: storedTokens.scope,
+        };
+        saveTokens(updated);
+        oauth2Client.setCredentials(updated);
+      } catch (err) {
+        throw wrapAuthError(err);
+      }
     }
 
     return oauth2Client;
