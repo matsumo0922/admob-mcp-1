@@ -4,3 +4,11 @@ secrets/*
 !secrets/.gitkeep
 memory/
 *.tsbuildinfo
+
+# Vercel
+.vercel/
+
+# Env files (never commit; use .env.example for templates)
+.env
+.env.local
+.env.*.local
