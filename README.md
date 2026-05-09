@@ -72,13 +72,13 @@ Use this if you want the AdMob tools available in Claude.ai on every device, not
 
 1. Fork the repo.
 2. Click **Deploy with Vercel** above.
-3. Provision Vercel KV in the project dashboard.
+3. Provision **Upstash Redis** in the Vercel Storage tab — it auto-injects the `KV_*` env vars our code uses. (Vercel deprecated standalone "Vercel KV"; Upstash is the same backend.)
 4. Create a Google Cloud OAuth client (Web app). Authorized redirect URI = `https://<your-deploy>.vercel.app/api/oauth/callback`.
-5. Set env vars in Vercel: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OAUTH_REDIRECT_URI`, `CONNECTOR_TOKEN` (generate with `openssl rand -hex 32`).
-6. Visit `https://<your-deploy>.vercel.app/api/setup` and authorize.
-7. Add the URL to Claude.ai → Settings → Connectors with `CONNECTOR_TOKEN` as the bearer.
+5. Set env vars in Vercel: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OAUTH_REDIRECT_URI`, `CONNECTOR_TOKEN` (generate with `openssl rand -hex 32`). Watch for stray whitespace.
+6. Visit `https://<your-deploy>.vercel.app/api/setup`, paste `CONNECTOR_TOKEN`, click Authorize, and complete Google sign-in. This authorizes the *server* to read AdMob data on your behalf.
+7. In Claude.ai → **Settings → Connectors → Add custom connector**: paste `https://<your-deploy>.vercel.app/api/mcp` as the URL, leave OAuth Client ID and Secret blank, click **Add**, then click **Connect**. A browser tab opens at `/oauth/authorize` — paste the same `CONNECTOR_TOKEN` once. Claude.ai handles the rest.
 
-Full walkthrough including troubleshooting: [docs/VERCEL.md](docs/VERCEL.md).
+Two OAuth flows are gated by the same `CONNECTOR_TOKEN`: Google ↔ server (step 6) and Claude.ai ↔ server (step 7). Full walkthrough including troubleshooting: [docs/VERCEL.md](docs/VERCEL.md).
 
 ## Usage
 
@@ -143,11 +143,14 @@ Just ask Claude a question about your AdMob data in natural language. On first u
 - `src/tools.ts` — all 36 tool definitions; `registerTools(server, getClient)`.
 - `src/auth.ts` — Google OAuth helpers (`getAuthenticatedClient`, `authorizeViaLocalServer`).
 - `src/token-store.ts` — `TokenStore` interface + `FileTokenStore` (local) + `KvTokenStore` (Vercel KV).
-- `src/http-auth.ts` — Timing-safe bearer check for HTTP endpoints.
+- `src/oauth-store.ts` — KV-backed storage for the connector OAuth flow (auth codes + access tokens).
+- `src/http-auth.ts` — Timing-safe bearer check for HTTP endpoints (sync against `CONNECTOR_TOKEN`, async against KV-issued access tokens).
 - `src/admob-client.ts`, `src/helpers.ts` — REST client and report-formatting utilities.
-- `api/mcp.ts` — Vercel function: HTTP MCP endpoint (Streamable HTTP, bearer-gated).
-- `api/setup.ts` — Vercel function: OAuth init form (POST-based).
-- `api/oauth/callback.ts` — Vercel function: Google redirect URI; stores tokens in KV.
+- `api/mcp.ts` — Vercel function: HTTP MCP endpoint (Streamable HTTP, bearer-gated, emits `WWW-Authenticate` on 401).
+- `api/setup.ts` — Vercel function: form that initiates the **Google ↔ server** OAuth flow.
+- `api/oauth/callback.ts` — Vercel function: Google's redirect URI; stores tokens in KV.
+- `api/oauth/authorize.ts`, `api/oauth/token.ts`, `api/oauth/register.ts` — Vercel functions implementing the **Claude.ai ↔ server** OAuth 2.1 flow with PKCE and Dynamic Client Registration.
+- `api/well-known/oauth-authorization-server.ts`, `api/well-known/oauth-protected-resource.ts` — RFC 8414 / RFC 9728 metadata so Claude.ai can discover the OAuth endpoints.
 - `setup.sh` — Interactive setup script ([L]ocal / [V]ercel / [B]oth).
 - `docs/VERCEL.md` — Forker deployment guide.
 - `AGENTS.md` — Canonical project notes (CLAUDE.md is a symlink to it).
