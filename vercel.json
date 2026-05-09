@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "mkdir -p public",
   "functions": {
     "api/mcp.ts": {
       "maxDuration": 60
