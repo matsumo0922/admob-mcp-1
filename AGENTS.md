@@ -54,7 +54,7 @@ npm run deploy          # vercel deploy --prod
 - OAuth tokens are stored in `secrets/token.json` and auto-refreshed when expired
 - Optimization tools like `revenue_drop_diagnosis` make parallel API calls to compare periods across multiple dimensions
 - The `setup.sh` script auto-detects `client_secret_*.apps.googleusercontent.com.json` files in `secrets/` and renames to `client_secret.json`
-- Token storage is abstracted behind `TokenStore` (`FileTokenStore` for local, `KvTokenStore` for Vercel). `auth.ts` does not know about filesystems or KV.
+- Token storage is abstracted behind `TokenStore` (`FileTokenStore` for local, `KvTokenStore` for Vercel). `auth.ts` doesn't couple token storage to any backend — it takes a `TokenStore` and never touches `token.json` or KV directly. (`auth.ts` does still read `client_secret.json` via `loadClientCredentialsFromFile`.)
 - The HTTP MCP endpoint (`api/mcp.ts`) is stateless — each request constructs its own `McpServer` and `StreamableHTTPServerTransport`.
 - `CONNECTOR_TOKEN` gates `api/mcp.ts` and `api/setup.ts`. Comparison is timing-safe.
 - OAuth state is stored in an `HttpOnly Secure SameSite=Lax` cookie scoped to `/api/oauth`.

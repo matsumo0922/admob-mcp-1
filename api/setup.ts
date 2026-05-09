@@ -2,13 +2,9 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { google } from "googleapis";
 import { randomBytes } from "crypto";
 import { checkBearer } from "../src/http-auth.js";
+import { ADMOB_OAUTH_SCOPES } from "../src/auth.js";
 
 export const config = { runtime: "nodejs20.x" };
-
-const ADMOB_SCOPES = [
-  "https://www.googleapis.com/auth/admob.readonly",
-  "https://www.googleapis.com/auth/admob.report",
-];
 
 const FORM_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>AdMob MCP Setup</title>
@@ -65,7 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const authUrl = oauth.generateAuthUrl({
     access_type: "offline",
-    scope: ADMOB_SCOPES,
+    scope: ADMOB_OAUTH_SCOPES,
     prompt: "consent",
     state,
   });

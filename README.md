@@ -12,7 +12,7 @@ Two ways to use this server:
 
 - Node.js 18+
 - A Google Cloud project with the **AdMob API** enabled
-- OAuth 2.0 credentials (Desktop app type) downloaded from the [Google API Console](https://console.cloud.google.com/apis/credentials)
+- OAuth 2.0 client credentials — **Desktop app** type for local mode, **Web application** type for Vercel mode (see [docs/VERCEL.md](docs/VERCEL.md) for the Vercel-specific setup).
 
 ## Setup
 
@@ -139,19 +139,18 @@ Just ask Claude a question about your AdMob data in natural language. On first u
 
 ## Project structure
 
-```
-admob-mcp/
-├── src/
-│   ├── index.ts          # MCP server and tool definitions
-│   ├── auth.ts           # OAuth 2.0 flow with local redirect server
-│   ├── authorize.ts      # Standalone CLI script for OAuth authorization
-│   ├── admob-client.ts   # AdMob REST API client
-│   └── helpers.ts        # Date utilities, report parsing, table formatting
-├── secrets/              # Git-ignored; holds credentials and tokens
-├── setup.sh              # One-command setup script
-├── package.json
-└── tsconfig.json
-```
+- `src/index.ts` — stdio entry point (Claude Code).
+- `src/tools.ts` — all 36 tool definitions; `registerTools(server, getClient)`.
+- `src/auth.ts` — Google OAuth helpers (`getAuthenticatedClient`, `authorizeViaLocalServer`).
+- `src/token-store.ts` — `TokenStore` interface + `FileTokenStore` (local) + `KvTokenStore` (Vercel KV).
+- `src/http-auth.ts` — Timing-safe bearer check for HTTP endpoints.
+- `src/admob-client.ts`, `src/helpers.ts` — REST client and report-formatting utilities.
+- `api/mcp.ts` — Vercel function: HTTP MCP endpoint (Streamable HTTP, bearer-gated).
+- `api/setup.ts` — Vercel function: OAuth init form (POST-based).
+- `api/oauth/callback.ts` — Vercel function: Google redirect URI; stores tokens in KV.
+- `setup.sh` — Interactive setup script ([L]ocal / [V]ercel / [B]oth).
+- `docs/VERCEL.md` — Forker deployment guide.
+- `AGENTS.md` — Canonical project notes (CLAUDE.md is a symlink to it).
 
 ## Development
 
