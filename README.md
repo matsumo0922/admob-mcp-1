@@ -2,11 +2,17 @@
 
 A local [Model Context Protocol](https://modelcontextprotocol.io) server that connects Claude to the [Google AdMob API](https://developers.google.com/admob/api), giving you a conversational interface to your ad revenue data.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fwillhou%2Fadmob-mcp&env=GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,CONNECTOR_TOKEN,OAUTH_REDIRECT_URI&envDescription=See%20docs%2FVERCEL.md%20for%20how%20to%20obtain%20each%20value&envLink=https%3A%2F%2Fgithub.com%2Fwillhou%2Fadmob-mcp%2Fblob%2Fmain%2Fdocs%2FVERCEL.md)
+
+Two ways to use this server:
+- **Local stdio (Claude Code on one machine):** run `./setup.sh` and pick **L**.
+- **Vercel + Claude.ai Connector (multi-device):** click the badge above, then follow [docs/VERCEL.md](docs/VERCEL.md). Or run `./setup.sh` and pick **V**.
+
 ## Prerequisites
 
 - Node.js 18+
 - A Google Cloud project with the **AdMob API** enabled
-- OAuth 2.0 credentials (Desktop app type) downloaded from the [Google API Console](https://console.cloud.google.com/apis/credentials)
+- OAuth 2.0 client credentials — **Desktop app** type for local mode, **Web application** type for Vercel mode (see [docs/VERCEL.md](docs/VERCEL.md) for the Vercel-specific setup).
 
 ## Setup
 
@@ -51,7 +57,7 @@ If you prefer not to use `setup.sh`, add this to your Claude Code MCP config:
     "admob": {
       "type": "stdio",
       "command": "node",
-      "args": ["/absolute/path/to/admob-mcp/dist/index.js"],
+      "args": ["/absolute/path/to/admob-mcp/dist/src/index.js"],
       "env": {
         "ADMOB_CREDENTIALS_PATH": "/absolute/path/to/admob-mcp/secrets/client_secret.json"
       }
@@ -59,6 +65,20 @@ If you prefer not to use `setup.sh`, add this to your Claude Code MCP config:
   }
 }
 ```
+
+## Connector setup (Vercel)
+
+Use this if you want the AdMob tools available in Claude.ai on every device, not just Claude Code on your laptop.
+
+1. Fork the repo.
+2. Click **Deploy with Vercel** above.
+3. Provision Vercel KV in the project dashboard.
+4. Create a Google Cloud OAuth client (Web app). Authorized redirect URI = `https://<your-deploy>.vercel.app/api/oauth/callback`.
+5. Set env vars in Vercel: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OAUTH_REDIRECT_URI`, `CONNECTOR_TOKEN` (generate with `openssl rand -hex 32`).
+6. Visit `https://<your-deploy>.vercel.app/api/setup` and authorize.
+7. Add the URL to Claude.ai → Settings → Connectors with `CONNECTOR_TOKEN` as the bearer.
+
+Full walkthrough including troubleshooting: [docs/VERCEL.md](docs/VERCEL.md).
 
 ## Usage
 
@@ -119,19 +139,18 @@ Just ask Claude a question about your AdMob data in natural language. On first u
 
 ## Project structure
 
-```
-admob-mcp/
-├── src/
-│   ├── index.ts          # MCP server and tool definitions
-│   ├── auth.ts           # OAuth 2.0 flow with local redirect server
-│   ├── authorize.ts      # Standalone CLI script for OAuth authorization
-│   ├── admob-client.ts   # AdMob REST API client
-│   └── helpers.ts        # Date utilities, report parsing, table formatting
-├── secrets/              # Git-ignored; holds credentials and tokens
-├── setup.sh              # One-command setup script
-├── package.json
-└── tsconfig.json
-```
+- `src/index.ts` — stdio entry point (Claude Code).
+- `src/tools.ts` — all 36 tool definitions; `registerTools(server, getClient)`.
+- `src/auth.ts` — Google OAuth helpers (`getAuthenticatedClient`, `authorizeViaLocalServer`).
+- `src/token-store.ts` — `TokenStore` interface + `FileTokenStore` (local) + `KvTokenStore` (Vercel KV).
+- `src/http-auth.ts` — Timing-safe bearer check for HTTP endpoints.
+- `src/admob-client.ts`, `src/helpers.ts` — REST client and report-formatting utilities.
+- `api/mcp.ts` — Vercel function: HTTP MCP endpoint (Streamable HTTP, bearer-gated).
+- `api/setup.ts` — Vercel function: OAuth init form (POST-based).
+- `api/oauth/callback.ts` — Vercel function: Google redirect URI; stores tokens in KV.
+- `setup.sh` — Interactive setup script ([L]ocal / [V]ercel / [B]oth).
+- `docs/VERCEL.md` — Forker deployment guide.
+- `AGENTS.md` — Canonical project notes (CLAUDE.md is a symlink to it).
 
 ## Development
 

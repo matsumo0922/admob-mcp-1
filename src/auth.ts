@@ -1,10 +1,8 @@
 import { google } from "googleapis";
 import * as fs from "fs";
-import * as path from "path";
 import * as http from "http";
 import * as url from "url";
-
-const TOKEN_PATH = path.join(__dirname, "..", "secrets", "token.json");
+import type { StoredTokens, TokenStore } from "./token-store.js";
 
 const ADMOB_SCOPES = [
   "https://www.googleapis.com/auth/admob.readonly",
@@ -37,43 +35,119 @@ export function wrapAuthError(err: unknown): Error {
   return err instanceof Error ? err : new Error(String(err));
 }
 
-interface StoredTokens {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  expiry_date: number;
-  scope?: string;
+export interface ClientCredentials {
+  client_id: string;
+  client_secret: string;
 }
 
-function loadClientCredentials(credentialsPath: string) {
+export function loadClientCredentialsFromFile(credentialsPath: string): ClientCredentials {
   const content = fs.readFileSync(credentialsPath, "utf-8");
   const json = JSON.parse(content);
   const creds = json.installed || json.web;
   if (!creds) {
-    throw new Error(
-      "Invalid credentials file. Expected 'installed' or 'web' key."
+    throw new Error("Invalid credentials file. Expected 'installed' or 'web' key.");
+  }
+  return { client_id: creds.client_id, client_secret: creds.client_secret };
+}
+
+/**
+ * Returns an OAuth2 client with valid credentials, refreshing if needed.
+ * Used by both stdio (FileTokenStore) and HTTP (KvTokenStore) modes.
+ * Caller is responsible for ensuring tokens already exist in the store
+ * (this function does NOT initiate an interactive OAuth flow).
+ */
+export async function getAuthenticatedClient(
+  creds: ClientCredentials,
+  store: TokenStore,
+  redirectUri = "http://localhost:8089",
+) {
+  const oauth2Client = new google.auth.OAuth2(
+    creds.client_id,
+    creds.client_secret,
+    redirectUri,
+  );
+
+  const stored = await store.load();
+  if (!stored) {
+    throw new AdMobAuthError(
+      "No stored tokens found. Authorize first (local: ./setup.sh, Vercel: visit /api/setup).",
     );
   }
-  return creds;
-}
 
-function loadStoredTokens(): StoredTokens | null {
-  try {
-    const content = fs.readFileSync(TOKEN_PATH, "utf-8");
-    return JSON.parse(content);
-  } catch {
-    return null;
+  const hasRequiredScopes =
+    stored.scope && ADMOB_SCOPES.every((s) => stored.scope!.includes(s));
+  if (!hasRequiredScopes) {
+    throw new AdMobAuthError(
+      `Stored token is missing required AdMob scopes. ${REAUTH_HINT}`,
+    );
   }
+
+  oauth2Client.setCredentials(stored);
+
+  if (stored.expiry_date && stored.expiry_date < Date.now()) {
+    try {
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      const updated: StoredTokens = {
+        access_token: credentials.access_token!,
+        refresh_token: credentials.refresh_token || stored.refresh_token,
+        token_type: credentials.token_type || "Bearer",
+        expiry_date: credentials.expiry_date!,
+        scope: stored.scope,
+      };
+      await store.save(updated);
+      oauth2Client.setCredentials(updated);
+    } catch (err) {
+      throw wrapAuthError(err);
+    }
+  }
+
+  return oauth2Client;
 }
 
-function saveTokens(tokens: StoredTokens) {
-  fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
-}
+/**
+ * Interactive OAuth flow that opens a browser and waits for Google to
+ * redirect to localhost:8089. Used only by the local CLI (authorize.ts).
+ */
+export async function authorizeViaLocalServer(
+  creds: ClientCredentials,
+  store: TokenStore,
+): Promise<void> {
+  const oauth2Client = new google.auth.OAuth2(
+    creds.client_id,
+    creds.client_secret,
+    "http://localhost:8089",
+  );
 
-function loadStoredScopes(): string[] | null {
-  const tokens = loadStoredTokens();
-  if (!tokens?.scope) return null;
-  return tokens.scope.split(" ").filter(Boolean);
+  // Merge AdMob scopes with any previously granted scopes
+  const mergedScopes = [...ADMOB_SCOPES];
+  const existing = await store.load();
+  if (existing?.scope) {
+    for (const s of existing.scope.split(" ").filter(Boolean)) {
+      if (!mergedScopes.includes(s)) mergedScopes.push(s);
+    }
+  }
+
+  console.error("Requesting scopes:", mergedScopes.join(", "));
+
+  const authUrl = oauth2Client.generateAuthUrl({
+    access_type: "offline",
+    scope: mergedScopes,
+    prompt: "consent",
+  });
+
+  const code = await getAuthCodeViaLocalServer(authUrl);
+  const { tokens } = await oauth2Client.getToken(code);
+
+  const newTokens: StoredTokens = {
+    access_token: tokens.access_token!,
+    refresh_token: tokens.refresh_token!,
+    token_type: tokens.token_type || "Bearer",
+    expiry_date: tokens.expiry_date!,
+    scope: tokens.scope || mergedScopes.join(" "),
+  };
+
+  await store.save(newTokens);
+  console.error("Authorization successful! Token saved.");
 }
 
 async function getAuthCodeViaLocalServer(authUrl: string): Promise<string> {
@@ -84,7 +158,7 @@ async function getAuthCodeViaLocalServer(authUrl: string): Promise<string> {
       if (code) {
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end(
-          "<h1>Authorization successful!</h1><p>You can close this window and return to the terminal.</p>"
+          "<h1>Authorization successful!</h1><p>You can close this window and return to the terminal.</p>",
         );
         server.close();
         resolve(code);
@@ -111,82 +185,4 @@ async function getAuthCodeViaLocalServer(authUrl: string): Promise<string> {
   });
 }
 
-export async function getAuthenticatedClient(credentialsPath: string) {
-  const creds = loadClientCredentials(credentialsPath);
-
-  const oauth2Client = new google.auth.OAuth2(
-    creds.client_id,
-    creds.client_secret,
-    "http://localhost:8089"
-  );
-
-  const storedTokens = loadStoredTokens();
-
-  // Check if stored token has all required AdMob scopes
-  const hasRequiredScopes =
-    storedTokens?.scope &&
-    ADMOB_SCOPES.every((s) => storedTokens.scope!.includes(s));
-
-  if (storedTokens && hasRequiredScopes) {
-    oauth2Client.setCredentials(storedTokens);
-
-    // Refresh if expired
-    if (storedTokens.expiry_date && storedTokens.expiry_date < Date.now()) {
-      console.error("Token expired, refreshing...");
-      try {
-        const { credentials } = await oauth2Client.refreshAccessToken();
-        const updated: StoredTokens = {
-          access_token: credentials.access_token!,
-          refresh_token: credentials.refresh_token || storedTokens.refresh_token,
-          token_type: credentials.token_type || "Bearer",
-          expiry_date: credentials.expiry_date!,
-          scope: storedTokens.scope,
-        };
-        saveTokens(updated);
-        oauth2Client.setCredentials(updated);
-      } catch (err) {
-        throw wrapAuthError(err);
-      }
-    }
-
-    return oauth2Client;
-  }
-
-  // No stored tokens - need to authorize
-  // Merge AdMob scopes with any previously granted scopes to avoid
-  // invalidating tokens used by other MCPs (e.g. Google Analytics)
-  const mergedScopes = [...ADMOB_SCOPES];
-  const existingScopeFile = loadStoredScopes();
-  if (existingScopeFile) {
-    for (const s of existingScopeFile) {
-      if (!mergedScopes.includes(s)) {
-        mergedScopes.push(s);
-      }
-    }
-  }
-
-  console.error("Requesting scopes:", mergedScopes.join(", "));
-
-  const authUrl = oauth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: mergedScopes,
-    prompt: "consent",
-  });
-
-  const code = await getAuthCodeViaLocalServer(authUrl);
-  const { tokens } = await oauth2Client.getToken(code);
-
-  const newTokens: StoredTokens = {
-    access_token: tokens.access_token!,
-    refresh_token: tokens.refresh_token!,
-    token_type: tokens.token_type || "Bearer",
-    expiry_date: tokens.expiry_date!,
-    scope: tokens.scope || mergedScopes.join(" "),
-  };
-
-  saveTokens(newTokens);
-  oauth2Client.setCredentials(newTokens);
-  console.error("Authorization successful! Token saved.");
-
-  return oauth2Client;
-}
+export const ADMOB_OAUTH_SCOPES = ADMOB_SCOPES;
