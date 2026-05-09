@@ -5,10 +5,15 @@ import { getAuthenticatedClient } from "../src/auth.js";
 import { AdMobClient } from "../src/admob-client.js";
 import { KvTokenStore } from "../src/token-store.js";
 import { registerTools } from "../src/tools.js";
-import { checkBearer } from "../src/http-auth.js";
+import { checkBearerAsync } from "../src/http-auth.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!checkBearer(req.headers["authorization"])) {
+  if (!(await checkBearerAsync(req.headers["authorization"]))) {
+    const issuer = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL || "admob-mcp.vercel.app"}`;
+    res.setHeader(
+      "WWW-Authenticate",
+      `Bearer realm="admob-mcp", resource_metadata="${issuer}/.well-known/oauth-protected-resource"`,
+    );
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
