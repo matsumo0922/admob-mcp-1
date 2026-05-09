@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { google } from "googleapis";
 import { KvTokenStore } from "../../src/token-store.js";
 import type { StoredTokens } from "../../src/token-store.js";
+import { ADMOB_OAUTH_SCOPES } from "../../src/auth.js";
 
 export const config = { runtime: "nodejs20.x" };
 
@@ -64,12 +65,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  // Google may omit `scope` from the response when it matches what was
+  // requested. Fall back to the scopes we asked for so getAuthenticatedClient
+  // doesn't later reject the token as missing required AdMob scopes.
   const stored: StoredTokens = {
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token,
     token_type: tokens.token_type || "Bearer",
     expiry_date: tokens.expiry_date!,
-    scope: tokens.scope,
+    scope: tokens.scope || ADMOB_OAUTH_SCOPES.join(" "),
   };
 
   const store = new KvTokenStore();
