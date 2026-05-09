@@ -18,7 +18,7 @@ export class FileTokenStore implements TokenStore {
 
   async load(): Promise<StoredTokens | null> {
     try {
-      const content = fs.readFileSync(this.path, "utf-8");
+      const content = await fs.promises.readFile(this.path, "utf-8");
       return JSON.parse(content) as StoredTokens;
     } catch {
       return null;
@@ -26,6 +26,6 @@ export class FileTokenStore implements TokenStore {
   }
 
   async save(tokens: StoredTokens): Promise<void> {
-    fs.writeFileSync(this.path, JSON.stringify(tokens, null, 2));
+    await fs.promises.writeFile(this.path, JSON.stringify(tokens, null, 2));
   }
 }
