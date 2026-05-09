@@ -6,21 +6,36 @@ Local MCP server that connects Claude to the Google AdMob API via OAuth 2.0.
 
 ```bash
 npm install
-npm run build      # tsc → dist/
-npm run start      # run server on stdio
-./setup.sh         # full setup: rename creds, build, register with Claude Code
+npm run build           # tsc → dist/ (mirrors src/, api/, tests/)
+npm test                # vitest unit tests
+npm run start           # run stdio server on stdio
+npm run dev:vercel      # vercel dev (HTTP mode, requires .env.local)
+npm run deploy          # vercel deploy --prod
+./setup.sh              # interactive: pick local / vercel / both
+./setup.sh --mode=local # non-interactive
+./setup.sh --reauth     # re-authorize (mode-aware)
 ```
 
 ## Project Layout
 
-- `src/index.ts` — MCP server entry point, all tool definitions (6 core + 10 reporting + 20 optimization)
-- `src/auth.ts` — OAuth 2.0 flow: token storage, refresh, local redirect server on port 8089. Dynamically merges existing token scopes with AdMob scopes on re-auth to avoid invalidating tokens used by other Google MCPs
-- `src/authorize.ts` — Standalone CLI script for OAuth authorization (run by `setup.sh`)
-- `src/admob-client.ts` — Thin REST client over `https://admob.googleapis.com/v1`
-- `src/helpers.ts` — Date math (`daysAgo`, `yesterday`), report row parsing (`parseReportRows`), table formatting (`formatReportTable`), period-over-period change utils (`pctChange`, `addPeriodChanges`)
-- `secrets/` — Git-ignored contents (only `.gitkeep` is tracked). Holds `client_secret.json` (OAuth creds) and `token.json` (cached token)
-- `setup.sh` — One-command setup: detects and renames credential file, builds, registers MCP server with Claude Code via `claude mcp add`. Supports `--reauth` flag to force re-authorization with updated scopes
-- `CLAUDE.md` — Symlink to this file
+- `src/index.ts` — stdio MCP entry point. Calls `registerTools(server, getClient)` with `FileTokenStore`.
+- `src/tools.ts` — all tool definitions (6 core + 10 reporting + 20 optimization). Exports `registerTools(server, getClient)`.
+- `src/auth.ts` — OAuth helpers. `getAuthenticatedClient(creds, store)` is the headless refresh path used by both modes; `authorizeViaLocalServer(creds, store)` is the interactive CLI flow.
+- `src/authorize.ts` — Standalone CLI script for OAuth authorization (run by `setup.sh` for local mode).
+- `src/admob-client.ts` — Thin REST client over `https://admob.googleapis.com/v1`.
+- `src/helpers.ts` — Date math, report row parsing, table formatting, period-over-period change utils.
+- `src/token-store.ts` — `TokenStore` interface, `FileTokenStore` (local), `KvTokenStore` (Vercel KV).
+- `src/http-auth.ts` — Timing-safe bearer check against `CONNECTOR_TOKEN`.
+- `api/mcp.ts` — Vercel function: Streamable HTTP MCP endpoint. Bearer-gated.
+- `api/setup.ts` — Vercel function: GET form + POST handler that initiates Google OAuth.
+- `api/oauth/callback.ts` — Vercel function: Google redirect URI; stores tokens in KV.
+- `vercel.json` — Vercel function runtime + per-function timeouts.
+- `.env.example` — Template for Vercel mode env vars.
+- `secrets/` — Git-ignored. Local-mode `client_secret.json` and `token.json` live here.
+- `setup.sh` — Interactive setup: pick `[L]ocal` / `[V]ercel` / `[B]oth`. Supports `--mode=` and `--reauth`.
+- `docs/VERCEL.md` — Forker-facing deploy guide for the Connector path.
+- `tests/` — vitest unit tests (`token-store.test.ts`, `http-auth.test.ts`).
+- `CLAUDE.md` — Symlink to this file.
 
 ## Tool Categories
 
@@ -39,11 +54,17 @@ npm run start      # run server on stdio
 - OAuth tokens are stored in `secrets/token.json` and auto-refreshed when expired
 - Optimization tools like `revenue_drop_diagnosis` make parallel API calls to compare periods across multiple dimensions
 - The `setup.sh` script auto-detects `client_secret_*.apps.googleusercontent.com.json` files in `secrets/` and renames to `client_secret.json`
+- Token storage is abstracted behind `TokenStore` (`FileTokenStore` for local, `KvTokenStore` for Vercel). `auth.ts` does not know about filesystems or KV.
+- The HTTP MCP endpoint (`api/mcp.ts`) is stateless — each request constructs its own `McpServer` and `StreamableHTTPServerTransport`.
+- `CONNECTOR_TOKEN` gates `api/mcp.ts` and `api/setup.ts`. Comparison is timing-safe.
+- OAuth state is stored in an `HttpOnly Secure SameSite=Lax` cookie scoped to `/api/oauth`.
 
 ## Contribution Rules
 
 - When adding a new tool, always update the tools table in `README.md` to document it with a prompt example.
 - Also update the tool count and tool list in this file (`AGENTS.md`).
+- When adding a new env var, document it in `.env.example` *and* `docs/VERCEL.md`.
+- Don't put `CONNECTOR_TOKEN` in URLs. The `/api/setup` flow uses a POST form deliberately.
 
 ## Secrets
 
