@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import { kv } from "@vercel/kv";
 
 export interface StoredTokens {
   access_token: string;
@@ -35,10 +34,12 @@ export class KvTokenStore implements TokenStore {
   private static readonly KEY = "admob:tokens";
 
   async load(): Promise<StoredTokens | null> {
+    const { kv } = await import("@vercel/kv");
     return (await kv.get<StoredTokens>(KvTokenStore.KEY)) ?? null;
   }
 
   async save(tokens: StoredTokens): Promise<void> {
+    const { kv } = await import("@vercel/kv");
     await kv.set(KvTokenStore.KEY, tokens);
   }
 }

@@ -86,6 +86,11 @@ describe("KvTokenStore", () => {
     (mod.kv as unknown as { __reset: () => void }).__reset();
   });
 
+  afterEach(async () => {
+    const mod = await import("@vercel/kv");
+    (mod.kv as unknown as { __reset: () => void }).__reset();
+  });
+
   it("returns null when KV has no token", async () => {
     const store = new KvTokenStore();
     expect(await store.load()).toBeNull();
