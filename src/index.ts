@@ -9,11 +9,13 @@ import { AdMobClient } from "./admob-client.js";
 import { FileTokenStore } from "./token-store.js";
 import { registerTools } from "./tools.js";
 
+// __dirname resolves to dist/src/ at runtime (compiled output), so we go up
+// two levels to reach the repo root and then into secrets/.
 const CREDENTIALS_PATH =
   process.env.ADMOB_CREDENTIALS_PATH ||
-  path.join(__dirname, "..", "secrets", "client_secret.json");
+  path.join(__dirname, "..", "..", "secrets", "client_secret.json");
 
-const TOKEN_PATH = path.join(__dirname, "..", "secrets", "token.json");
+const TOKEN_PATH = path.join(__dirname, "..", "..", "secrets", "token.json");
 
 let admobClient: AdMobClient | null = null;
 
