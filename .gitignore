@@ -5,6 +5,9 @@ secrets/*
 memory/
 *.tsbuildinfo
 
+# Claude Code local harness state
+.claude/
+
 # Vercel
 .vercel/
 
