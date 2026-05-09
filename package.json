@@ -6,7 +6,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "authorize": "node dist/authorize.js"
+    "authorize": "node dist/authorize.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +19,8 @@
     "googleapis": "^171.4.0"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
-    "typescript": "^5.9.3"
+    "@types/node": "^25.6.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }
