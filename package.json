@@ -16,6 +16,7 @@
   "type": "commonjs",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
+    "@vercel/kv": "^3.0.0",
     "googleapis": "^171.4.0"
   },
   "devDependencies": {
