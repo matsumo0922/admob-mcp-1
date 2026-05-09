@@ -51,7 +51,7 @@ If you prefer not to use `setup.sh`, add this to your Claude Code MCP config:
     "admob": {
       "type": "stdio",
       "command": "node",
-      "args": ["/absolute/path/to/admob-mcp/dist/index.js"],
+      "args": ["/absolute/path/to/admob-mcp/dist/src/index.js"],
       "env": {
         "ADMOB_CREDENTIALS_PATH": "/absolute/path/to/admob-mcp/secrets/client_secret.json"
       }

@@ -2,13 +2,15 @@
   "name": "admob-mcp",
   "version": "1.0.0",
   "description": "MCP server for Google AdMob API",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "authorize": "node dist/authorize.js",
+    "start": "node dist/src/index.js",
+    "authorize": "node dist/src/authorize.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dev:vercel": "vercel dev",
+    "deploy": "vercel deploy --prod"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +19,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@vercel/kv": "^3.0.0",
+    "@vercel/node": "^5.7.16",
     "googleapis": "^171.4.0"
   },
   "devDependencies": {

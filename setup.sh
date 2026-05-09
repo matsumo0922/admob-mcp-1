@@ -67,7 +67,7 @@ else
   echo "Authorizing with Google AdMob API..."
   echo "A browser window will open for you to grant access."
   echo
-  ADMOB_CREDENTIALS_PATH="$SECRETS_DIR/client_secret.json" node "$SCRIPT_DIR/dist/authorize.js"
+  ADMOB_CREDENTIALS_PATH="$SECRETS_DIR/client_secret.json" node "$SCRIPT_DIR/dist/src/authorize.js"
 fi
 
 # 6. Register MCP server with Claude Code
@@ -76,7 +76,7 @@ echo "Registering MCP server with Claude Code..."
 claude mcp add admob \
   --scope user \
   -e ADMOB_CREDENTIALS_PATH="$SECRETS_DIR/client_secret.json" \
-  -- node "$SCRIPT_DIR/dist/index.js"
+  -- node "$SCRIPT_DIR/dist/src/index.js"
 
 echo
 echo "=== Setup complete ==="
