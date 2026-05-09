@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/mcp.ts": {
+      "maxDuration": 60
+    },
+    "api/setup.ts": {
+      "maxDuration": 10
+    },
+    "api/oauth/callback.ts": {
+      "maxDuration": 10
+    }
+  }
+}
