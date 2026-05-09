@@ -4,8 +4,6 @@ import { KvTokenStore } from "../../src/token-store.js";
 import type { StoredTokens } from "../../src/token-store.js";
 import { ADMOB_OAUTH_SCOPES } from "../../src/auth.js";
 
-export const config = { runtime: "nodejs20.x" };
-
 function parseStateCookie(cookieHeader: string | undefined): string | null {
   if (!cookieHeader) return null;
   const m = /(?:^|;\s*)admob_oauth_state=([^;]+)/.exec(cookieHeader);

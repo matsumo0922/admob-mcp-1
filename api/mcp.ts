@@ -7,11 +7,6 @@ import { KvTokenStore } from "../src/token-store.js";
 import { registerTools } from "../src/tools.js";
 import { checkBearer } from "../src/http-auth.js";
 
-export const config = {
-  runtime: "nodejs20.x",
-  maxDuration: 60,
-};
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!checkBearer(req.headers["authorization"])) {
     res.status(401).json({ error: "Unauthorized" });

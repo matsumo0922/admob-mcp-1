@@ -4,8 +4,6 @@ import { randomBytes } from "crypto";
 import { checkBearer } from "../src/http-auth.js";
 import { ADMOB_OAUTH_SCOPES } from "../src/auth.js";
 
-export const config = { runtime: "nodejs20.x" };
-
 const FORM_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>AdMob MCP Setup</title>
 <style>body{font-family:system-ui,sans-serif;max-width:480px;margin:64px auto;padding:0 16px}
