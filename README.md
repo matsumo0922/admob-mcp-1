@@ -2,6 +2,12 @@
 
 A local [Model Context Protocol](https://modelcontextprotocol.io) server that connects Claude to the [Google AdMob API](https://developers.google.com/admob/api), giving you a conversational interface to your ad revenue data.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fwillhou%2Fadmob-mcp&env=GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,CONNECTOR_TOKEN,OAUTH_REDIRECT_URI&envDescription=See%20docs%2FVERCEL.md%20for%20how%20to%20obtain%20each%20value&envLink=https%3A%2F%2Fgithub.com%2Fwillhou%2Fadmob-mcp%2Fblob%2Fmain%2Fdocs%2FVERCEL.md)
+
+Two ways to use this server:
+- **Local stdio (Claude Code on one machine):** run `./setup.sh` and pick **L**.
+- **Vercel + Claude.ai Connector (multi-device):** click the badge above, then follow [docs/VERCEL.md](docs/VERCEL.md). Or run `./setup.sh` and pick **V**.
+
 ## Prerequisites
 
 - Node.js 18+
@@ -59,6 +65,20 @@ If you prefer not to use `setup.sh`, add this to your Claude Code MCP config:
   }
 }
 ```
+
+## Connector setup (Vercel)
+
+Use this if you want the AdMob tools available in Claude.ai on every device, not just Claude Code on your laptop.
+
+1. Fork the repo.
+2. Click **Deploy with Vercel** above.
+3. Provision Vercel KV in the project dashboard.
+4. Create a Google Cloud OAuth client (Web app). Authorized redirect URI = `https://<your-deploy>.vercel.app/api/oauth/callback`.
+5. Set env vars in Vercel: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OAUTH_REDIRECT_URI`, `CONNECTOR_TOKEN` (generate with `openssl rand -hex 32`).
+6. Visit `https://<your-deploy>.vercel.app/api/setup` and authorize.
+7. Add the URL to Claude.ai → Settings → Connectors with `CONNECTOR_TOKEN` as the bearer.
+
+Full walkthrough including troubleshooting: [docs/VERCEL.md](docs/VERCEL.md).
 
 ## Usage
 
