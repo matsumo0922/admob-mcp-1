@@ -6,6 +6,8 @@ import {
   yesterday,
   parseReportRows,
   formatReportTable,
+  formatCurrency,
+  extractCurrencyCode,
   pctChange,
   addPeriodChanges,
 } from "./helpers.js";
@@ -287,8 +289,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ dimension: "DATE", order: "ASCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Revenue Trend (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Revenue Trend (last ${n} days)` }) }],
       };
     }
   );
@@ -310,8 +313,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Ad Unit Performance (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Ad Unit Performance (last ${n} days)` }) }],
       };
     }
   );
@@ -335,8 +339,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         maxReportRows: top_n || 20,
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Top Countries by Revenue (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Top Countries by Revenue (last ${n} days)` }) }],
       };
     }
   );
@@ -358,8 +363,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Ad Format Comparison (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Ad Format Comparison (last ${n} days)` }) }],
       };
     }
   );
@@ -381,8 +387,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Platform Comparison (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Platform Comparison (last ${n} days)` }) }],
       };
     }
   );
@@ -404,8 +411,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ metric: "MATCH_RATE", order: "ASCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Fill Rate Analysis by Ad Unit (last ${n} days) — sorted worst first` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Fill Rate Analysis by Ad Unit (last ${n} days) — sorted worst first` }) }],
       };
     }
   );
@@ -427,8 +435,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Mediation Ad Source Performance (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Mediation Ad Source Performance (last ${n} days)` }) }],
       };
     }
   );
@@ -450,11 +459,12 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ dimension: "WEEK", order: "ASCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
 
       // Add WoW change column for earnings
       for (let i = 1; i < rows.length; i++) {
-        const prev = parseInt(rows[i - 1].ESTIMATED_EARNINGS || "0", 10);
-        const curr = parseInt(rows[i].ESTIMATED_EARNINGS || "0", 10);
+        const prev = parseFloat(rows[i - 1].ESTIMATED_EARNINGS || "0");
+        const curr = parseFloat(rows[i].ESTIMATED_EARNINGS || "0");
         if (prev > 0) {
           const pct = ((curr - prev) / prev) * 100;
           rows[i]["EARNINGS_WOW_CHANGE"] = `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`;
@@ -465,7 +475,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       if (rows.length > 0) rows[0]["EARNINGS_WOW_CHANGE"] = "-";
 
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Week-over-Week Revenue (last ${n} weeks)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Week-over-Week Revenue (last ${n} weeks)` }) }],
       };
     }
   );
@@ -489,8 +499,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         maxReportRows: top_n || 10,
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Top Apps by Revenue (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Top Apps by Revenue (last ${n} days)` }) }],
       };
     }
   );
@@ -514,8 +525,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ dimension: "DATE", order: "ASCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `eCPM Trend (last ${n} days)${by_ad_unit ? " by Ad Unit" : ""}` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `eCPM Trend (last ${n} days)${by_ad_unit ? " by Ad Unit" : ""}` }) }],
       };
     }
   );
@@ -591,15 +603,16 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         });
       }
 
+      const currency = extractCurrencyCode(recentByFormat);
       const sections = [
         formatReportTable(comparePeriods(recentByFormat, prevByFormat, "FORMAT"), {
-          title: `By Format (last ${n}d vs prior ${n}d)`,
+          currency, title: `By Format (last ${n}d vs prior ${n}d)`,
         }),
         formatReportTable(comparePeriods(recentByCountry, prevByCountry, "COUNTRY"), {
-          title: `By Country — Top 10 (last ${n}d vs prior ${n}d)`,
+          currency, title: `By Country — Top 10 (last ${n}d vs prior ${n}d)`,
         }),
         formatReportTable(comparePeriods(recentByPlatform, prevByPlatform, "PLATFORM"), {
-          title: `By Platform (last ${n}d vs prior ${n}d)`,
+          currency, title: `By Platform (last ${n}d vs prior ${n}d)`,
         }),
       ];
 
@@ -629,19 +642,20 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
 
       // Calculate share of total for each restriction type
-      const totalEarnings = rows.reduce((s, r) => s + parseInt(r.ESTIMATED_EARNINGS || "0", 10), 0);
+      const totalEarnings = rows.reduce((s, r) => s + parseFloat(r.ESTIMATED_EARNINGS || "0"), 0);
       const totalImpressions = rows.reduce((s, r) => s + parseInt(r.IMPRESSIONS || "0", 10), 0);
       for (const row of rows) {
-        const e = parseInt(row.ESTIMATED_EARNINGS || "0", 10);
+        const e = parseFloat(row.ESTIMATED_EARNINGS || "0");
         const i = parseInt(row.IMPRESSIONS || "0", 10);
         row["REVENUE_%"] = totalEarnings > 0 ? `${((e / totalEarnings) * 100).toFixed(1)}%` : "0%";
         row["IMPRESSION_%"] = totalImpressions > 0 ? `${((i / totalImpressions) * 100).toFixed(1)}%` : "0%";
       }
 
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Serving Restriction Impact (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Serving Restriction Impact (last ${n} days)` }) }],
       };
     }
   );
@@ -669,8 +683,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       }
       const result = await client.generateNetworkReport(account_id, spec);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `App Version Performance (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `App Version Performance (last ${n} days)` }) }],
       };
     }
   );
@@ -693,8 +708,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         maxReportRows: 15,
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `GMA SDK Version Performance (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `GMA SDK Version Performance (last ${n} days)` }) }],
       };
     }
   );
@@ -716,9 +732,10 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ dimension: "MONTH", order: "ASCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       addPeriodChanges(rows, ["ESTIMATED_EARNINGS", "IMPRESSIONS", "IMPRESSION_RPM"]);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Month-over-Month Performance (last ${n} months)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Month-over-Month Performance (last ${n} months)` }) }],
       };
     }
   );
@@ -740,6 +757,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ metric: "IMPRESSIONS", order: "DESCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
 
       // Sort by CTR ascending so worst CTR (with significant impressions) come first
       rows.sort((a, b) => {
@@ -752,7 +770,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         content: [{
           type: "text",
           text: formatReportTable(rows, {
-            title: `Ad Units Sorted by CTR — Lowest First (last ${n} days)\nThese high-impression, low-CTR units may benefit from placement or format changes.`,
+            currency, title: `Ad Units Sorted by CTR — Lowest First (last ${n} days)\nThese high-impression, low-CTR units may benefit from placement or format changes.`,
           }),
         }],
       };
@@ -782,8 +800,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       }
       const result = await client.generateNetworkReport(account_id, spec);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `OS Version Performance (last ${n} days)${platform ? ` — ${platform} only` : ""}` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `OS Version Performance (last ${n} days)${platform ? ` — ${platform} only` : ""}` }) }],
       };
     }
   );
@@ -805,8 +824,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Mediation Group Performance (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Mediation Group Performance (last ${n} days)` }) }],
       };
     }
   );
@@ -829,15 +849,16 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         maxReportRows: 30,
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
 
-      // Compute average eCPM across all rows
-      const totalEarnings = rows.reduce((s, r) => s + parseInt(r.ESTIMATED_EARNINGS || "0", 10), 0);
+      // Compute average eCPM across all rows (rows are already real numbers from parseReportRows)
+      const totalEarnings = rows.reduce((s, r) => s + parseFloat(r.ESTIMATED_EARNINGS || "0"), 0);
       const totalImpressions = rows.reduce((s, r) => s + parseInt(r.IMPRESSIONS || "0", 10), 0);
       const avgEcpm = totalImpressions > 0 ? totalEarnings / totalImpressions * 1000 : 0;
 
       // Mark countries below average eCPM
       for (const row of rows) {
-        const ecpm = parseInt(row.IMPRESSION_RPM || "0", 10) / 1_000_000;
+        const ecpm = parseFloat(row.IMPRESSION_RPM || "0");
         row["VS_AVG_ECPM"] = avgEcpm > 0
           ? `${((ecpm / avgEcpm - 1) * 100).toFixed(0)}%`
           : "N/A";
@@ -847,8 +868,8 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       rows.sort((a, b) => {
         const impA = parseInt(a.IMPRESSIONS || "0", 10);
         const impB = parseInt(b.IMPRESSIONS || "0", 10);
-        const ecpmA = parseInt(a.IMPRESSION_RPM || "0", 10);
-        const ecpmB = parseInt(b.IMPRESSION_RPM || "0", 10);
+        const ecpmA = parseFloat(a.IMPRESSION_RPM || "0");
+        const ecpmB = parseFloat(b.IMPRESSION_RPM || "0");
         // Prioritize: high impressions + low eCPM = biggest opportunity
         return (impB / (ecpmB || 1)) - (impA / (ecpmA || 1));
       });
@@ -857,7 +878,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         content: [{
           type: "text",
           text: formatReportTable(rows, {
-            title: `Country eCPM Opportunity Analysis (last ${n} days)\nSorted by optimization opportunity (high volume + below-avg eCPM first)\nAvg eCPM: $${(avgEcpm / 1_000_000).toFixed(2)}`,
+            currency, title: `Country eCPM Opportunity Analysis (last ${n} days)\nSorted by optimization opportunity (high volume + below-avg eCPM first)\nAvg eCPM: ${formatCurrency(avgEcpm, currency)}`,
           }),
         }],
       };
@@ -890,8 +911,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       }
       const result = await client.generateNetworkReport(account_id, spec);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Format x Country Performance (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Format x Country Performance (last ${n} days)` }) }],
       };
     }
   );
@@ -927,9 +949,10 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
 
       const currentRows = parseReportRows(currentResult);
       const lastMonthRows = parseReportRows(lastMonthResult);
+      const currency = extractCurrencyCode(currentResult);
 
-      const currentEarnings = currentRows.reduce((s, r) => s + parseInt(r.ESTIMATED_EARNINGS || "0", 10), 0);
-      const lastMonthEarnings = lastMonthRows.reduce((s, r) => s + parseInt(r.ESTIMATED_EARNINGS || "0", 10), 0);
+      const currentEarnings = currentRows.reduce((s, r) => s + parseFloat(r.ESTIMATED_EARNINGS || "0"), 0);
+      const lastMonthEarnings = lastMonthRows.reduce((s, r) => s + parseFloat(r.ESTIMATED_EARNINGS || "0"), 0);
       const currentImpressions = currentRows.reduce((s, r) => s + parseInt(r.IMPRESSIONS || "0", 10), 0);
       const lastMonthImpressions = lastMonthRows.reduce((s, r) => s + parseInt(r.IMPRESSIONS || "0", 10), 0);
 
@@ -941,7 +964,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       const earningsPct = lastMonthEarnings > 0 ? ((projectedEarnings / lastMonthEarnings - 1) * 100).toFixed(1) : "N/A";
       const impressionsPct = lastMonthImpressions > 0 ? ((projectedImpressions / lastMonthImpressions - 1) * 100).toFixed(1) : "N/A";
 
-      const micro = (v: number) => `$${(v / 1_000_000).toFixed(2)}`;
+      const micro = (v: number) => formatCurrency(v, currency);
 
       const lines = [
         `Revenue Pacing Report`,
@@ -981,13 +1004,14 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
 
       const best = rows.slice(0, count);
       const worst = [...rows].reverse().slice(0, count);
 
       const sections = [
-        formatReportTable(best, { title: `Top ${count} Revenue Days (last ${n} days)` }),
-        formatReportTable(worst, { title: `Bottom ${count} Revenue Days (last ${n} days)` }),
+        formatReportTable(best, { currency, title: `Top ${count} Revenue Days (last ${n} days)` }),
+        formatReportTable(worst, { currency, title: `Bottom ${count} Revenue Days (last ${n} days)` }),
       ];
 
       return { content: [{ type: "text", text: sections.join("\n\n") }] };
@@ -1011,6 +1035,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ dimension: "DATE", order: "ASCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
 
       const weekday: Array<Record<string, string>> = [];
       const weekend: Array<Record<string, string>> = [];
@@ -1051,7 +1076,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       summary.push(diff as any);
 
       return {
-        content: [{ type: "text", text: formatReportTable(summary, { title: `Weekday vs Weekend Performance (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(summary, { currency, title: `Weekday vs Weekend Performance (last ${n} days)` }) }],
       };
     }
   );
@@ -1073,8 +1098,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ metric: "ESTIMATED_EARNINGS", order: "DESCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Platform x Format Matrix (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Platform x Format Matrix (last ${n} days)` }) }],
       };
     }
   );
@@ -1113,12 +1139,13 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
 
       function pareto(data: unknown, dimKey: string): string {
         const rows = parseReportRows(data);
-        const total = rows.reduce((s, r) => s + parseInt(r.ESTIMATED_EARNINGS || "0", 10), 0);
+        const currency = extractCurrencyCode(data);
+        const total = rows.reduce((s, r) => s + parseFloat(r.ESTIMATED_EARNINGS || "0"), 0);
         if (total === 0) return `No earnings data for ${dimKey}.`;
 
         let cumulative = 0;
         const table = rows.map((r, i) => {
-          const e = parseInt(r.ESTIMATED_EARNINGS || "0", 10);
+          const e = parseFloat(r.ESTIMATED_EARNINGS || "0");
           cumulative += e;
           return {
             RANK: String(i + 1),
@@ -1133,7 +1160,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         const idx80 = table.findIndex((r) => parseFloat(r["CUMULATIVE_%"]) >= 80);
         const top = table.slice(0, Math.max((idx80 ?? 0) + 1, 5));
         const summary = `Top ${idx80 + 1} of ${rows.length} ${dimKey.toLowerCase()}s account for 80%+ of revenue.`;
-        return formatReportTable(top, { title: `${dimKey} Concentration` }) + `\n${summary}`;
+        return formatReportTable(top, { currency, title: `${dimKey} Concentration` }) + `\n${summary}`;
       }
 
       const sections = [
@@ -1173,8 +1200,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       }
       const result = await client.generateMediationReport(account_id, spec);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Mediation Ad Source Trend (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Mediation Ad Source Trend (last ${n} days)` }) }],
       };
     }
   );
@@ -1216,10 +1244,11 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         } as any),
       ]);
 
+      const currency = extractCurrencyCode(byAdUnit);
       const sections = [
-        formatReportTable(parseReportRows(byAdUnit), { title: "By Ad Unit" }),
-        formatReportTable(parseReportRows(byFormat), { title: "By Format" }),
-        formatReportTable(parseReportRows(byPlatform), { title: "By Platform" }),
+        formatReportTable(parseReportRows(byAdUnit), { currency, title: "By Ad Unit" }),
+        formatReportTable(parseReportRows(byFormat), { currency, title: "By Format" }),
+        formatReportTable(parseReportRows(byPlatform), { currency, title: "By Platform" }),
       ];
 
       return {
@@ -1250,6 +1279,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         sortConditions: [{ dimension: "DATE", order: "ASCENDING" }],
       } as any);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
 
       const windowSize = 7;
       const anomalies: Array<Record<string, string>> = [];
@@ -1259,13 +1289,13 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
         let avgEarnings = 0;
         let avgImpressions = 0;
         for (let j = i - windowSize; j < i; j++) {
-          avgEarnings += parseInt(rows[j].ESTIMATED_EARNINGS || "0", 10);
+          avgEarnings += parseFloat(rows[j].ESTIMATED_EARNINGS || "0");
           avgImpressions += parseInt(rows[j].IMPRESSIONS || "0", 10);
         }
         avgEarnings /= windowSize;
         avgImpressions /= windowSize;
 
-        const earnings = parseInt(rows[i].ESTIMATED_EARNINGS || "0", 10);
+        const earnings = parseFloat(rows[i].ESTIMATED_EARNINGS || "0");
         const impressions = parseInt(rows[i].IMPRESSIONS || "0", 10);
 
         const earningsDeviation = avgEarnings > 0 ? ((earnings - avgEarnings) / avgEarnings) * 100 : 0;
@@ -1290,7 +1320,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       }
 
       return {
-        content: [{ type: "text", text: formatReportTable(anomalies, { title: `Anomalies Detected (last ${n} days, threshold: ${thresh}% deviation from 7-day rolling avg)` }) }],
+        content: [{ type: "text", text: formatReportTable(anomalies, { currency, title: `Anomalies Detected (last ${n} days, threshold: ${thresh}% deviation from 7-day rolling avg)` }) }],
       };
     }
   );
@@ -1317,8 +1347,9 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       }
       const result = await client.generateMediationReport(account_id, spec);
       const rows = parseReportRows(result);
+      const currency = extractCurrencyCode(result);
       return {
-        content: [{ type: "text", text: formatReportTable(rows, { title: `Ad Source Instance Comparison (last ${n} days)` }) }],
+        content: [{ type: "text", text: formatReportTable(rows, { currency, title: `Ad Source Instance Comparison (last ${n} days)` }) }],
       };
     }
   );
@@ -1360,6 +1391,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
 
       const currentRows = parseReportRows(currentResult);
       const lastYearRows = parseReportRows(lastYearResult);
+      const currency = extractCurrencyCode(currentResult);
 
       // Build comparison rows
       const comparison: Array<Record<string, string>> = [];
@@ -1379,7 +1411,7 @@ Note: ESTIMATED_EARNINGS and OBSERVED_ECPM are in micros (divide by 1,000,000).`
       }
 
       return {
-        content: [{ type: "text", text: formatReportTable(comparison, { title: `Year-over-Year Comparison (${n} month${n > 1 ? "s" : ""})` }) }],
+        content: [{ type: "text", text: formatReportTable(comparison, { currency, title: `Year-over-Year Comparison (${n} month${n > 1 ? "s" : ""})` }) }],
       };
     }
   );
